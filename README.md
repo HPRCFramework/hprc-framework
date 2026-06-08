@@ -79,26 +79,11 @@ HPRC inverts that. The **template becomes the source of truth**:
 
 You hand HPRC four things — a template, your data (`bindings`), the web request, and a config — and it hands back finished HTML. In between, one render goes through a few clear stages: it reads the template, decides which prompts should run, works out their order (some prompts depend on others), runs them, and stitches the answers back into the page.
 
-```mermaid
-flowchart TD
-    REQ["request"] --> CFG["HPRCConfig<br/>llm_client · rules · tools · cache"]
-    BIND["bindings"] --> CFG
-    TPL["template"] --> PAR["parser"]
-    PAR --> TD["TemplateDefinition<br/>node tree + prompt/response index"]
-    CFG --> R["Renderer"]
-    TD --> R
-    R --> S1["1 · evaluate each prompt's condition rule (skip the ones that don't apply)"]
-    S1 --> S2["2 · build a dependency graph (which prompts feed which)"]
-    S2 --> S3["3 · work out execution order (sequential by default, concurrent on opt-in)"]
-    S3 --> S4["4 · fill in data: fill / param / include → final prompt text"]
-    S4 --> S5["5 · run each prompt (use the cache if we can, else call the model)"]
-    S5 --> S6["6 · build the final HTML: insert response, drop prompt"]
-    S6 --> OUT["final HTML"]
-    classDef io fill:#eef2ff,stroke:#4f46e5,color:#1e1b4b;
-    classDef out fill:#cdebc5,stroke:#2e7d32,color:#06280c;
-    class REQ,BIND,TPL io;
-    class OUT out;
-```
+![How HPRC works — you provide a SPREP template, your bindings, the web request and an HPRCConfig; the HPRC Renderer orchestrates everything, calls the language model through an adapter, and returns the final HTML with responses inserted.](docs/assets/how-hprc-works.webp)
+
+Inside the renderer, one pass runs a short, clear pipeline:
+
+![The render pipeline — 1) parse the template, 2) normalize the request, 3) evaluate rules, 4) build a dependency graph, 5) order into levels, 6) run each prompt (use the cache or call the model), 7) serialize the final HTML.](docs/assets/render-pipeline.webp)
 
 The renderer (`hprc/renderer.py`) is the part that coordinates all this. Everything flowing through it is described by plain data models (`hprc/models.py`), which keeps the rest of the library simple and declarative. For the full step‑by‑step, see the [Architecture](docs/architecture.html) doc.
 

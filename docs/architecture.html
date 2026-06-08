@@ -68,26 +68,7 @@
             assembling the final HTML.</li>
       </ul>
       <div class="diagramwrap">
-        <pre class="mermaid">
-flowchart TB
-    subgraph YOU["YOU PROVIDE"]
-        direction LR
-        T["SPREP template<br/>(.sprep.html)"]
-        D["bindings<br/>(your business data)"]
-        Q["web request<br/>(query / path / method)"]
-        C["HPRCConfig<br/>llm_client · rules · tools · cache"]
-    end
-    T --> R
-    D --> R
-    Q --> R
-    C --> R
-    R["HPRC Renderer<br/>(the framework — orchestrates everything)"]
-    R -- "call: prompt, model, tools" --> M["language model<br/>(via an adapter)"]
-    M -- "answer: text" --> R
-    R --> OUT["Final HTML"]
-    classDef out fill:#cdebc5,stroke:#2e7d32,color:#000;
-    class OUT out;
-        </pre>
+        <img src="assets/how-hprc-works.webp" alt="How HPRC works: you provide a SPREP template, bindings, a web request and an HPRCConfig; the HPRC Renderer orchestrates everything — calling the language model (via an adapter) and returning the final HTML with responses inserted." style="width:100%;max-width:760px;height:auto;display:block;margin:0 auto"/>
         <p class="figcap">You supply data + a template + config; HPRC drives the model and returns HTML.</p>
       </div>
       <p>The key inversion: instead of writing Python that builds prompt strings and splices
@@ -164,15 +145,7 @@ flowchart TB
            invoke any of it directly.</p>
       </div>
       <div class="diagramwrap">
-        <pre class="mermaid">
-flowchart TD
-    P["1 · Parse the template<br/>(find prompts, responses, fills)"] --> N["2 · Normalize the request<br/>request.query / path / method"]
-    N --> E["3 · Evaluate rules<br/>skip prompts whose condition is false"]
-    E --> G["4 · Build a dependency graph<br/>which prompts feed which (via include)"]
-    G --> O["5 · Order into levels<br/>independent prompts can share a level"]
-    O --> X["6 · Run each prompt<br/>resolve data, check cache, call model"]
-    X --> S["7 · Serialize<br/>insert responses, drop prompts, final HTML"]
-        </pre>
+        <img src="assets/render-pipeline.webp" alt="The render pipeline, seven steps: 1 parse the template (find prompts, responses, fills); 2 normalize the request (query/path/method); 3 evaluate rules (skip prompts whose condition is false); 4 build a dependency graph (which prompts feed which, via include); 5 order into levels (independent prompts can share a level); 6 run each prompt (resolve data, check cache, call model); 7 serialize (insert responses, drop prompts, final HTML)." style="width:100%;max-width:760px;height:auto;display:block;margin:0 auto"/>
         <p class="figcap">One render pass, start to finish. Steps 4–6 are what remove the need for hand-written orchestration.</p>
       </div>
       <ol>
