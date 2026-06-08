@@ -182,16 +182,7 @@
       <p><strong>Ready-made adapters ship for the common providers; you can write your own for
          anything else.</strong></p>
       <div class="diagramwrap">
-        <pre class="mermaid">
-flowchart TB
-    R["Renderer"] -->|"generate(prompt, model, temperature, tools)"| I{{"LLMClient<br/>(one interface)"}}
-    I --> O["OpenAIClient"]
-    I --> A["AnthropicClient<br/>(Claude)"]
-    I --> G["GeminiClient"]
-    I --> L["OllamaClient<br/>(local / LM Studio)"]
-    I --> K["MockLLMClient<br/>(offline, for tests)"]
-    I --> Y["YourClient<br/>(write a ~30-line adapter)"]
-        </pre>
+        <img src="assets/llm-adapters.png" alt="One interface, any model: the Renderer calls generate(prompt, model, temperature, tools) on a single LLMClient interface. Behind it sit self-contained adapters — OpenAIClient, AnthropicClient (Claude), GeminiClient, OllamaClient (local / LM Studio), MockLLMClient (offline, for tests), and YourClient (a ~30-line custom adapter). Swap, add, or implement new providers without changing the renderer." style="width:100%;max-width:880px;height:auto;display:block;margin:0 auto"/>
         <p class="figcap">Each box is one self-contained adapter. The renderer talks only to the interface.</p>
       </div>
       <table>
@@ -268,20 +259,7 @@ config = HPRCConfig(tools={"crm_lookup": crm_lookup})   # name -&gt; function
       <p>When a prompt declares tools, HPRC calls the model with the prompt + the tool schemas
          (each adapter maps them to that vendor's format). Then:</p>
       <div class="diagramwrap">
-        <pre class="mermaid">
-sequenceDiagram
-    autonumber
-    participant R as HPRC (during render)
-    participant LLM as language model
-    participant Fn as your registered tool fn
-    R->>LLM: prompt + available tools
-    LLM-->>R: please call crm_lookup with customer_id 1001
-    R->>Fn: crm_lookup(customer_id=1001)
-    Fn-->>R: no open tickets, renewed last month
-    R->>LLM: here is the tool result, continue
-    LLM-->>R: final text answer
-    Note over R: one iteration — execute the tool call(s), feed back, render the next turn
-        </pre>
+        <img src="assets/tools-iteration.png" alt="Single tool iteration: HPRC sends the prompt plus available tools to the language model; the model asks HPRC to call crm_lookup(customer_id=1001); HPRC runs your registered tool function, gets the result, sends it back, and the model returns the final text. One iteration — execute the tool call(s), feed back, render the next turn." style="width:100%;max-width:820px;height:auto;display:block;margin:0 auto"/>
         <p class="figcap">HPRC executes the tool with the model's arguments and feeds the result back, then renders the model's final text.</p>
       </div>
       <ul>
