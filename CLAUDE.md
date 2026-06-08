@@ -38,9 +38,9 @@ hprc/            core library (10 modules)
 examples/        fastapi_app.py, standalone.py, dashboard.py + templates/ + data/
 tests/           pytest suite (66 passing)
 docs/            offline HTML docs (index/user-guide/architecture) + build.py
-                 (pandoc: Markdown -> styled HTML; regenerates README.html/PORTFOLIO.html)
+                 (pandoc: Markdown -> styled HTML; regenerates README.html)
 sprep/           SPREP template-language spec (sprep-spec.md + sprep-spec.html)
-README.html/PORTFOLIO.html   generated from the .md by `python docs/build.py`
+README.html      generated from the .md by `python docs/build.py`
 ```
 
 ## Conventions (match the existing code)

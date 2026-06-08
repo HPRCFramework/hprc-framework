@@ -18,7 +18,7 @@ SPREP Templates   (Simple Prompt Response Embedded Pages)
 
 > **Status:** open source under **Apache-2.0**, early release `0.1.0` (Alpha). Created by **Rajesh Ramani** · `hprcframework.dev`.
 
-> **📖 Browse the HTML docs:** open [`docs/index.html`](docs/index.html) in a browser — a styled [User Guide](docs/user-guide.html) (with examples), an [Architecture & Design](docs/architecture.html) page, an HTML version of this README ([`README.html`](README.html)), and the [**SPREP language spec**](sprep/sprep-spec.html). All pages work offline except the Architecture page, which loads [Mermaid](https://mermaid.js.org) from a CDN to draw its diagrams. *(README.html and PORTFOLIO.html are generated from Markdown with `python docs/build.py`, which needs [pandoc](https://pandoc.org).)*
+> **📖 Browse the HTML docs:** open [`docs/index.html`](docs/index.html) in a browser — a styled [User Guide](docs/user-guide.html) (with examples), an [Architecture & Design](docs/architecture.html) page, an HTML version of this README ([`README.html`](README.html)), and the [**SPREP language spec**](sprep/sprep-spec.html). All pages work offline except the Architecture page, which loads [Mermaid](https://mermaid.js.org) from a CDN to draw its diagrams. *(README.html is generated from Markdown with `python docs/build.py`, which needs [pandoc](https://pandoc.org).)*
 
 > **📐 The SPREP template language** has its own specification: [`sprep/sprep-spec.md`](sprep/sprep-spec.md) ([HTML](sprep/sprep-spec.html)). HPRC is its reference implementation.
 

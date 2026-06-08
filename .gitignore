@@ -21,3 +21,7 @@ _promo/
 # local agent state / private notes — never publish
 .claude/
 docs/PROVISIONAL_PATENT_DRAFT.md
+
+# private résumé / portfolio source — never publish
+PORTFOLIO.md
+PORTFOLIO.html

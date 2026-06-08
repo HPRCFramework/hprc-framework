@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generate styled HTML versions of the Markdown docs.
 
-Converts the repo's Markdown docs (README, PORTFOLIO) into HTML that matches the
+Converts the repo's Markdown docs (README) into HTML that matches the
 look of the hand-written doc site (shared stylesheet + sidebar layout). The
 hand-written pages (docs/index.html, user-guide.html, architecture.html,
 sprep/sprep-spec.html) are richer and are left as-is.
@@ -27,7 +27,6 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # repo root
 # (source markdown, output html, page title)
 DOCS = [
     ("README.md", "README.html", "HPRC Framework — README"),
-    ("PORTFOLIO.md", "PORTFOLIO.html", "HPRC Framework — Portfolio"),
 ]
 
 CSS_HREF = "docs/assets/hprc-docs.css"
@@ -35,7 +34,6 @@ CSS_HREF = "docs/assets/hprc-docs.css"
 # Rewrite links to Markdown files so HTML readers stay in HTML where a version exists.
 LINK_REWRITES = {
     'href="README.md"': 'href="README.html"',
-    'href="PORTFOLIO.md"': 'href="PORTFOLIO.html"',
     'href="ARCHITECTURE.md"': 'href="docs/architecture.html"',
     'href="sprep/sprep-spec.md"': 'href="sprep/sprep-spec.html"',
 }
@@ -47,7 +45,11 @@ NAV = """    <div class="nav-group nav-doclinks">
       <a href="docs/user-guide.html">User Guide</a>
       <a href="docs/architecture.html">Architecture</a>
       <a href="sprep/sprep-spec.html">SPREP Spec</a>
-      <a href="PORTFOLIO.html">Portfolio</a>
+    </div>
+    <div class="nav-group">
+      <h4>Project</h4>
+      <a href="https://github.com/HPRCFramework/hprc-framework">GitHub ↗</a>
+      <a href="https://github.com/HPRCFramework/hprc-framework/issues">Issues ↗</a>
     </div>"""
 
 TEMPLATE = """<!DOCTYPE html>
