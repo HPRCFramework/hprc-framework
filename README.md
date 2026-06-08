@@ -4,6 +4,8 @@
 
 > **Declarative AI rendering for web applications.**
 
+![HPRC — execute LLM prompts the same way your server renders HTML, right inside the template. Prompts as first-class HTML elements.](docs/assets/hprc-hero.webp)
+
 [![PyPI version](https://img.shields.io/pypi/v/hprc-framework.svg)](https://pypi.org/project/hprc-framework/)
 [![Python versions](https://img.shields.io/pypi/pyversions/hprc-framework.svg)](https://pypi.org/project/hprc-framework/)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
