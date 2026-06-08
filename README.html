@@ -34,6 +34,16 @@ Construction</h3>
 <blockquote>
 <p><strong>Declarative AI rendering for web applications.</strong></p>
 </blockquote>
+<p><a href="https://pypi.org/project/hprc-framework/"><img
+src="https://img.shields.io/pypi/v/hprc-framework.svg"
+alt="PyPI version" /></a> <a
+href="https://pypi.org/project/hprc-framework/"><img
+src="https://img.shields.io/pypi/pyversions/hprc-framework.svg"
+alt="Python versions" /></a> <a href="LICENSE"><img
+src="https://img.shields.io/badge/License-Apache_2.0-blue.svg"
+alt="License: Apache-2.0" /></a></p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install hprc-framework</span></code></pre></div>
 <p>An open-source framework for declarative AI rendering. <strong>Write
 SPREP templates</strong> — HTML with embedded
 <code>&lt;prompt&gt;</code> / <code>&lt;response&gt;</code> elements —
@@ -98,11 +108,11 @@ Your template has blanks; HPRC fills them — except the "blanks" are
 written by a language model that can read your data.</p>
 </blockquote>
 <p>A tiny example:</p>
-<div class="sourceCode" id="cb2"><pre
-class="sourceCode html"><code class="sourceCode html"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">h1</span><span class="dt">&gt;</span>Hello <span class="dt">&lt;</span><span class="kw">fill</span><span class="dt">&gt;</span>customer.name<span class="dt">&lt;/</span><span class="kw">fill</span><span class="dt">&gt;&lt;/</span><span class="kw">h1</span><span class="dt">&gt;</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">prompt</span><span class="ot"> id</span><span class="op">=</span><span class="st">&quot;welcome&quot;</span><span class="dt">&gt;</span>Write a one-line welcome for <span class="dt">&lt;</span><span class="kw">fill</span><span class="dt">&gt;</span>customer.name<span class="dt">&lt;/</span><span class="kw">fill</span><span class="dt">&gt;</span>.<span class="dt">&lt;/</span><span class="kw">prompt</span><span class="dt">&gt;</span></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">response</span><span class="ot"> id</span><span class="op">=</span><span class="st">&quot;welcome&quot;</span><span class="dt">/&gt;</span></span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode html"><code class="sourceCode html"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">h1</span><span class="dt">&gt;</span>Hello <span class="dt">&lt;</span><span class="kw">fill</span><span class="dt">&gt;</span>customer.name<span class="dt">&lt;/</span><span class="kw">fill</span><span class="dt">&gt;&lt;/</span><span class="kw">h1</span><span class="dt">&gt;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">prompt</span><span class="ot"> id</span><span class="op">=</span><span class="st">&quot;welcome&quot;</span><span class="dt">&gt;</span>Write a one-line welcome for <span class="dt">&lt;</span><span class="kw">fill</span><span class="dt">&gt;</span>customer.name<span class="dt">&lt;/</span><span class="kw">fill</span><span class="dt">&gt;</span>.<span class="dt">&lt;/</span><span class="kw">prompt</span><span class="dt">&gt;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">response</span><span class="ot"> id</span><span class="op">=</span><span class="st">&quot;welcome&quot;</span><span class="dt">/&gt;</span></span></code></pre></div>
 <p>Your Python code supplies the data (<code>customer.name</code>) and
 picks the model; HPRC does the rest.</p>
 <h2 id="why-it-exists">Why it exists</h2>
@@ -175,18 +185,26 @@ the library simple and declarative. For the full step‑by‑step, see the
 <a href="docs/architecture.html">Architecture</a> doc.</p>
 <hr />
 <h2 id="install">Install</h2>
-<p>Install HPRC editable from the repo root:</p>
-<div class="sourceCode" id="cb4"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> <span class="at">-m</span> venv .venv</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="bu">source</span> .venv/bin/activate</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install <span class="at">-e</span> .</span></code></pre></div>
-<p>Runtime dependency is just <code>pydantic&gt;=2.0</code>. Optional
-extras:</p>
+<p>From PyPI:</p>
 <div class="sourceCode" id="cb5"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install <span class="at">-e</span> <span class="st">&quot;.[openai]&quot;</span>    <span class="co"># real OpenAI provider (openai&gt;=1.0)</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install <span class="at">-e</span> <span class="st">&quot;.[fastapi]&quot;</span>   <span class="co"># the FastAPI example (fastapi, uvicorn)</span></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install <span class="at">-e</span> <span class="st">&quot;.[dev]&quot;</span>       <span class="co"># tests (pytest, pytest-asyncio)</span></span></code></pre></div>
-<p>Requires Python <code>&gt;=3.9</code>.</p>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install hprc-framework            <span class="co"># core (just pydantic) — then: import hprc</span></span></code></pre></div>
+<p>Optional provider / framework extras:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install <span class="st">&quot;hprc-framework[anthropic]&quot;</span>   <span class="co"># Claude provider (anthropic)</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install <span class="st">&quot;hprc-framework[openai]&quot;</span>      <span class="co"># OpenAI / Ollama provider</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install <span class="st">&quot;hprc-framework[gemini]&quot;</span>      <span class="co"># Gemini provider</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install <span class="st">&quot;hprc-framework[fastapi]&quot;</span>     <span class="co"># FastAPI example (fastapi, uvicorn)</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install <span class="st">&quot;hprc-framework[all]&quot;</span>         <span class="co"># every provider SDK</span></span></code></pre></div>
+<p>The only required runtime dependency is
+<code>pydantic&gt;=2.0</code>; provider SDKs are optional and lazily
+imported. Requires Python <code>&gt;=3.9</code>.</p>
+<p><strong>From source (for development):</strong></p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> clone https://github.com/HPRCFramework/hprc-framework</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> hprc-framework</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> <span class="at">-m</span> venv .venv <span class="kw">&amp;&amp;</span> <span class="bu">source</span> .venv/bin/activate</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install <span class="at">-e</span> <span class="st">&quot;.[dev]&quot;</span>               <span class="co"># editable install + tests</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> <span class="at">-m</span> pytest <span class="at">-q</span></span></code></pre></div>
 <hr />
 <h2 id="quick-start">Quick Start</h2>
 <p>HPRC's public entry points are <strong>async</strong> coroutines. Run
@@ -201,49 +219,49 @@ provider (<code>OpenAIClient</code>, <code>AnthropicClient</code>,
 <code>GeminiClient</code>, <code>OllamaClient</code>) — see <a
 href="#shipped-providers">Shipped providers</a>.</p>
 </blockquote>
-<div class="sourceCode" id="cb6"><pre
-class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> asyncio</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> hprc</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> hprc <span class="im">import</span> MemoryCache, MockLLMClient, HPRCConfig</span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>TEMPLATE <span class="op">=</span> <span class="st">&quot;&quot;&quot;&lt;!DOCTYPE html&gt;</span></span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="st">&lt;html&gt;&lt;body&gt;</span></span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="st">  &lt;h1&gt;Hello &lt;fill&gt;customer.name&lt;/fill&gt; (&lt;fill&gt;customer.tier&lt;/fill&gt;)&lt;/h1&gt;</span></span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="st">  &lt;prompt id=&quot;summary&quot; model=&quot;gpt-5&quot; condition=&quot;is_premium&quot; temperature=&quot;0.2&quot; cache=&quot;24h&quot;&gt;</span></span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="st">    Customer &lt;fill&gt;customer.name&lt;/fill&gt; is interested in &lt;param&gt;product&lt;/param&gt;.</span></span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a><span class="st">    Write a one-line account summary.</span></span>
-<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a><span class="st">  &lt;/prompt&gt;</span></span>
-<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a><span class="st">  &lt;prompt id=&quot;upsell&quot; model=&quot;gpt-5&quot;&gt;</span></span>
-<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a><span class="st">    Given: &lt;include response=&quot;summary&quot;/&gt;</span></span>
-<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a><span class="st">    Suggest one upsell.</span></span>
-<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a><span class="st">  &lt;/prompt&gt;</span></span>
-<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a><span class="st">  &lt;section&gt;&lt;h2&gt;Summary&lt;/h2&gt;&lt;response id=&quot;summary&quot;/&gt;&lt;/section&gt;</span></span>
-<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a><span class="st">  &lt;section&gt;&lt;h2&gt;Upsell&lt;/h2&gt;&lt;response id=&quot;upsell&quot;/&gt;&lt;/section&gt;</span></span>
-<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a><span class="st">&lt;/body&gt;&lt;/html&gt;&quot;&quot;&quot;</span></span>
-<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a><span class="cf">async</span> <span class="kw">def</span> main():</span>
-<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>    config <span class="op">=</span> HPRCConfig(</span>
-<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a>        llm_client<span class="op">=</span>MockLLMClient(),</span>
-<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a>        rules<span class="op">=</span>{<span class="st">&quot;is_premium&quot;</span>: <span class="kw">lambda</span> ctx: ctx[<span class="st">&quot;customer&quot;</span>][<span class="st">&quot;tier&quot;</span>] <span class="op">==</span> <span class="st">&quot;premium&quot;</span>},</span>
-<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a>        tools<span class="op">=</span>{},</span>
-<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a>        cache<span class="op">=</span>MemoryCache(),</span>
-<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a>    html <span class="op">=</span> <span class="cf">await</span> hprc.render_template_string(</span>
-<span id="cb6-33"><a href="#cb6-33" aria-hidden="true" tabindex="-1"></a>        template_html<span class="op">=</span>TEMPLATE,</span>
-<span id="cb6-34"><a href="#cb6-34" aria-hidden="true" tabindex="-1"></a>        request<span class="op">=</span>{<span class="st">&quot;query&quot;</span>: {<span class="st">&quot;product&quot;</span>: <span class="st">&quot;WidgetPro&quot;</span>}, <span class="st">&quot;path&quot;</span>: {}, <span class="st">&quot;method&quot;</span>: <span class="st">&quot;GET&quot;</span>},</span>
-<span id="cb6-35"><a href="#cb6-35" aria-hidden="true" tabindex="-1"></a>        bindings<span class="op">=</span>{<span class="st">&quot;customer&quot;</span>: {<span class="st">&quot;name&quot;</span>: <span class="st">&quot;Ada&quot;</span>, <span class="st">&quot;tier&quot;</span>: <span class="st">&quot;premium&quot;</span>}},</span>
-<span id="cb6-36"><a href="#cb6-36" aria-hidden="true" tabindex="-1"></a>        config<span class="op">=</span>config,</span>
-<span id="cb6-37"><a href="#cb6-37" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb6-38"><a href="#cb6-38" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(html)</span>
-<span id="cb6-39"><a href="#cb6-39" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-40"><a href="#cb6-40" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-41"><a href="#cb6-41" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="va">__name__</span> <span class="op">==</span> <span class="st">&quot;__main__&quot;</span>:</span>
-<span id="cb6-42"><a href="#cb6-42" aria-hidden="true" tabindex="-1"></a>    asyncio.run(main())</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> asyncio</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> hprc</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> hprc <span class="im">import</span> MemoryCache, MockLLMClient, HPRCConfig</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>TEMPLATE <span class="op">=</span> <span class="st">&quot;&quot;&quot;&lt;!DOCTYPE html&gt;</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="st">&lt;html&gt;&lt;body&gt;</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="st">  &lt;h1&gt;Hello &lt;fill&gt;customer.name&lt;/fill&gt; (&lt;fill&gt;customer.tier&lt;/fill&gt;)&lt;/h1&gt;</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a><span class="st">  &lt;prompt id=&quot;summary&quot; model=&quot;gpt-5&quot; condition=&quot;is_premium&quot; temperature=&quot;0.2&quot; cache=&quot;24h&quot;&gt;</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a><span class="st">    Customer &lt;fill&gt;customer.name&lt;/fill&gt; is interested in &lt;param&gt;product&lt;/param&gt;.</span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a><span class="st">    Write a one-line account summary.</span></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a><span class="st">  &lt;/prompt&gt;</span></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a><span class="st">  &lt;prompt id=&quot;upsell&quot; model=&quot;gpt-5&quot;&gt;</span></span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a><span class="st">    Given: &lt;include response=&quot;summary&quot;/&gt;</span></span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a><span class="st">    Suggest one upsell.</span></span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a><span class="st">  &lt;/prompt&gt;</span></span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a><span class="st">  &lt;section&gt;&lt;h2&gt;Summary&lt;/h2&gt;&lt;response id=&quot;summary&quot;/&gt;&lt;/section&gt;</span></span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a><span class="st">  &lt;section&gt;&lt;h2&gt;Upsell&lt;/h2&gt;&lt;response id=&quot;upsell&quot;/&gt;&lt;/section&gt;</span></span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a><span class="st">&lt;/body&gt;&lt;/html&gt;&quot;&quot;&quot;</span></span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a><span class="cf">async</span> <span class="kw">def</span> main():</span>
+<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a>    config <span class="op">=</span> HPRCConfig(</span>
+<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a>        llm_client<span class="op">=</span>MockLLMClient(),</span>
+<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a>        rules<span class="op">=</span>{<span class="st">&quot;is_premium&quot;</span>: <span class="kw">lambda</span> ctx: ctx[<span class="st">&quot;customer&quot;</span>][<span class="st">&quot;tier&quot;</span>] <span class="op">==</span> <span class="st">&quot;premium&quot;</span>},</span>
+<span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a>        tools<span class="op">=</span>{},</span>
+<span id="cb8-30"><a href="#cb8-30" aria-hidden="true" tabindex="-1"></a>        cache<span class="op">=</span>MemoryCache(),</span>
+<span id="cb8-31"><a href="#cb8-31" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb8-32"><a href="#cb8-32" aria-hidden="true" tabindex="-1"></a>    html <span class="op">=</span> <span class="cf">await</span> hprc.render_template_string(</span>
+<span id="cb8-33"><a href="#cb8-33" aria-hidden="true" tabindex="-1"></a>        template_html<span class="op">=</span>TEMPLATE,</span>
+<span id="cb8-34"><a href="#cb8-34" aria-hidden="true" tabindex="-1"></a>        request<span class="op">=</span>{<span class="st">&quot;query&quot;</span>: {<span class="st">&quot;product&quot;</span>: <span class="st">&quot;WidgetPro&quot;</span>}, <span class="st">&quot;path&quot;</span>: {}, <span class="st">&quot;method&quot;</span>: <span class="st">&quot;GET&quot;</span>},</span>
+<span id="cb8-35"><a href="#cb8-35" aria-hidden="true" tabindex="-1"></a>        bindings<span class="op">=</span>{<span class="st">&quot;customer&quot;</span>: {<span class="st">&quot;name&quot;</span>: <span class="st">&quot;Ada&quot;</span>, <span class="st">&quot;tier&quot;</span>: <span class="st">&quot;premium&quot;</span>}},</span>
+<span id="cb8-36"><a href="#cb8-36" aria-hidden="true" tabindex="-1"></a>        config<span class="op">=</span>config,</span>
+<span id="cb8-37"><a href="#cb8-37" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb8-38"><a href="#cb8-38" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(html)</span>
+<span id="cb8-39"><a href="#cb8-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-40"><a href="#cb8-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-41"><a href="#cb8-41" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="va">__name__</span> <span class="op">==</span> <span class="st">&quot;__main__&quot;</span>:</span>
+<span id="cb8-42"><a href="#cb8-42" aria-hidden="true" tabindex="-1"></a>    asyncio.run(main())</span></code></pre></div>
 <p>(This is <code>examples/standalone.py</code> — run it with
 <code>python examples/standalone.py</code>.)</p>
 <p><code>upsell</code> depends on <code>summary</code> via
@@ -295,24 +313,24 @@ is available to both your HTML <em>and</em> your prompts through
 <code>&lt;fill&gt;</code>. Typically your Python <strong>business logic
 produces that dictionary</strong> — querying a database, calling
 services, computing derived values — and passes it in:</p>
-<div class="sourceCode" id="cb7"><pre
-class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># your business logic produces a plain dict (JSON-like)</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> build_customer_bindings(customer_id):</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    record <span class="op">=</span> load_customer(customer_id)          <span class="co"># e.g. from a database</span></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    age    <span class="op">=</span> compute_age(record[<span class="st">&quot;dob&quot;</span>])          <span class="co"># a derived value</span></span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> {<span class="st">&quot;customer&quot;</span>: {<span class="st">&quot;name&quot;</span>: record[<span class="st">&quot;name&quot;</span>], <span class="st">&quot;age&quot;</span>: age,        <span class="co"># 55</span></span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>                         <span class="st">&quot;segment&quot;</span>: <span class="st">&quot;senior&quot;</span> <span class="cf">if</span> age <span class="op">&gt;=</span> <span class="dv">55</span> <span class="cf">else</span> <span class="st">&quot;standard&quot;</span>}}</span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>html <span class="op">=</span> <span class="cf">await</span> hprc.render_template(</span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    template_path<span class="op">=</span><span class="st">&quot;customer_profile.sprep.html&quot;</span>,</span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    bindings<span class="op">=</span>build_customer_bindings(<span class="st">&quot;1001&quot;</span>),      <span class="co"># &lt;-- your data flows in here</span></span>
-<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>    config<span class="op">=</span>config,</span>
-<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># your business logic produces a plain dict (JSON-like)</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> build_customer_bindings(customer_id):</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    record <span class="op">=</span> load_customer(customer_id)          <span class="co"># e.g. from a database</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    age    <span class="op">=</span> compute_age(record[<span class="st">&quot;dob&quot;</span>])          <span class="co"># a derived value</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> {<span class="st">&quot;customer&quot;</span>: {<span class="st">&quot;name&quot;</span>: record[<span class="st">&quot;name&quot;</span>], <span class="st">&quot;age&quot;</span>: age,        <span class="co"># 55</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>                         <span class="st">&quot;segment&quot;</span>: <span class="st">&quot;senior&quot;</span> <span class="cf">if</span> age <span class="op">&gt;=</span> <span class="dv">55</span> <span class="cf">else</span> <span class="st">&quot;standard&quot;</span>}}</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>html <span class="op">=</span> <span class="cf">await</span> hprc.render_template(</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>    template_path<span class="op">=</span><span class="st">&quot;customer_profile.sprep.html&quot;</span>,</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>    bindings<span class="op">=</span>build_customer_bindings(<span class="st">&quot;1001&quot;</span>),      <span class="co"># &lt;-- your data flows in here</span></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>    config<span class="op">=</span>config,</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div>
 <p>Now the same <code>customer.age</code> is usable <strong>in the page
 and in a prompt</strong>, from the template file:</p>
-<div class="sourceCode" id="cb8"><pre
-class="sourceCode html"><code class="sourceCode html"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">p</span><span class="dt">&gt;</span>Age: <span class="dt">&lt;</span><span class="kw">fill</span><span class="dt">&gt;</span>customer.age<span class="dt">&lt;/</span><span class="kw">fill</span><span class="dt">&gt;&lt;/</span><span class="kw">p</span><span class="dt">&gt;</span>                              <span class="co">&lt;!-- shown in the HTML --&gt;</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">prompt</span><span class="ot"> id</span><span class="op">=</span><span class="st">&quot;hi&quot;</span><span class="dt">&gt;</span>Greet this <span class="dt">&lt;</span><span class="kw">fill</span><span class="dt">&gt;</span>customer.age<span class="dt">&lt;/</span><span class="kw">fill</span><span class="dt">&gt;</span>-year-old customer.<span class="dt">&lt;/</span><span class="kw">prompt</span><span class="dt">&gt;</span></span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode html"><code class="sourceCode html"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">p</span><span class="dt">&gt;</span>Age: <span class="dt">&lt;</span><span class="kw">fill</span><span class="dt">&gt;</span>customer.age<span class="dt">&lt;/</span><span class="kw">fill</span><span class="dt">&gt;&lt;/</span><span class="kw">p</span><span class="dt">&gt;</span>                              <span class="co">&lt;!-- shown in the HTML --&gt;</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">prompt</span><span class="ot"> id</span><span class="op">=</span><span class="st">&quot;hi&quot;</span><span class="dt">&gt;</span>Greet this <span class="dt">&lt;</span><span class="kw">fill</span><span class="dt">&gt;</span>customer.age<span class="dt">&lt;/</span><span class="kw">fill</span><span class="dt">&gt;</span>-year-old customer.<span class="dt">&lt;/</span><span class="kw">prompt</span><span class="dt">&gt;</span></span></code></pre></div>
 <p>There are <strong>two namespaces</strong>, and
 <code>&lt;fill&gt;</code> reads from both:</p>
 <table>
@@ -355,13 +373,13 @@ HPRC <strong>never touches the HTTP response</strong>; it's a templating
 engine, not a web framework (it deliberately never imports
 FastAPI/Flask/Django). <strong>You</strong> put the string on the wire —
 which is exactly what lets HPRC drop into any stack:</p>
-<div class="sourceCode" id="cb9"><pre
-class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>html <span class="op">=</span> <span class="cf">await</span> hprc.render_template(...)   <span class="co"># -&gt; str (the finished page)</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="cf">return</span> HTMLResponse(html)                <span class="co"># FastAPI / Starlette</span></span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="cf">return</span> html                              <span class="co"># Flask  (or Response(html, mimetype=&quot;text/html&quot;))</span></span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="cf">return</span> HttpResponse(html)                <span class="co"># Django</span></span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="bu">open</span>(<span class="st">&quot;out.html&quot;</span>, <span class="st">&quot;w&quot;</span>).write(html)        <span class="co"># no framework — write a file, or print(html)</span></span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>html <span class="op">=</span> <span class="cf">await</span> hprc.render_template(...)   <span class="co"># -&gt; str (the finished page)</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="cf">return</span> HTMLResponse(html)                <span class="co"># FastAPI / Starlette</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="cf">return</span> html                              <span class="co"># Flask  (or Response(html, mimetype=&quot;text/html&quot;))</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="cf">return</span> HttpResponse(html)                <span class="co"># Django</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="bu">open</span>(<span class="st">&quot;out.html&quot;</span>, <span class="st">&quot;w&quot;</span>).write(html)        <span class="co"># no framework — write a file, or print(html)</span></span></code></pre></div>
 <p>Symmetrically, the <strong>request</strong> is data you pass
 <em>in</em> via <code>request=</code> — either a framework request
 object (FastAPI/Starlette/Flask/Django) or a plain
@@ -382,21 +400,21 @@ round-trips faithfully.</p>
 executable, tacit</h3>
 <p>Defines an LLM call. Its body is the prompt text (resolved at render
 time). It is <strong>never rendered</strong> into the output.</p>
-<div class="sourceCode" id="cb10"><pre
-class="sourceCode html"><code class="sourceCode html"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">prompt</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="ot">    id</span><span class="op">=</span><span class="st">&quot;summary&quot;</span></span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="ot">    model</span><span class="op">=</span><span class="st">&quot;gpt-5&quot;</span></span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="ot">    condition</span><span class="op">=</span><span class="st">&quot;is_premium_customer&quot;</span></span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="ot">    temperature</span><span class="op">=</span><span class="st">&quot;0.2&quot;</span></span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="ot">    max_tokens</span><span class="op">=</span><span class="st">&quot;500&quot;</span></span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="ot">    cache</span><span class="op">=</span><span class="st">&quot;24h&quot;</span></span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a><span class="ot">    async</span><span class="op">=</span><span class="st">&quot;yes&quot;</span></span>
-<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="ot">    tools</span><span class="op">=</span><span class="st">&quot;crm_lookup,pricing_engine&quot;</span><span class="dt">&gt;</span></span>
-<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>  You are a concise account analyst.</span>
-<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>  Customer: <span class="dt">&lt;</span><span class="kw">fill</span><span class="dt">&gt;</span>customer.name<span class="dt">&lt;/</span><span class="kw">fill</span><span class="dt">&gt;</span> (tier: <span class="dt">&lt;</span><span class="kw">fill</span><span class="dt">&gt;</span>customer.tier<span class="dt">&lt;/</span><span class="kw">fill</span><span class="dt">&gt;</span>)</span>
-<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>  Product of interest: <span class="dt">&lt;</span><span class="kw">param</span><span class="dt">&gt;</span>product<span class="dt">&lt;/</span><span class="kw">param</span><span class="dt">&gt;</span></span>
-<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>  Write a 2-sentence summary.</span>
-<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;/</span><span class="kw">prompt</span><span class="dt">&gt;</span></span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre
+class="sourceCode html"><code class="sourceCode html"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">prompt</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="ot">    id</span><span class="op">=</span><span class="st">&quot;summary&quot;</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="ot">    model</span><span class="op">=</span><span class="st">&quot;gpt-5&quot;</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="ot">    condition</span><span class="op">=</span><span class="st">&quot;is_premium_customer&quot;</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="ot">    temperature</span><span class="op">=</span><span class="st">&quot;0.2&quot;</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="ot">    max_tokens</span><span class="op">=</span><span class="st">&quot;500&quot;</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="ot">    cache</span><span class="op">=</span><span class="st">&quot;24h&quot;</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a><span class="ot">    async</span><span class="op">=</span><span class="st">&quot;yes&quot;</span></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a><span class="ot">    tools</span><span class="op">=</span><span class="st">&quot;crm_lookup,pricing_engine&quot;</span><span class="dt">&gt;</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>  You are a concise account analyst.</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>  Customer: <span class="dt">&lt;</span><span class="kw">fill</span><span class="dt">&gt;</span>customer.name<span class="dt">&lt;/</span><span class="kw">fill</span><span class="dt">&gt;</span> (tier: <span class="dt">&lt;</span><span class="kw">fill</span><span class="dt">&gt;</span>customer.tier<span class="dt">&lt;/</span><span class="kw">fill</span><span class="dt">&gt;</span>)</span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>  Product of interest: <span class="dt">&lt;</span><span class="kw">param</span><span class="dt">&gt;</span>product<span class="dt">&lt;/</span><span class="kw">param</span><span class="dt">&gt;</span></span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>  Write a 2-sentence summary.</span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;/</span><span class="kw">prompt</span><span class="dt">&gt;</span></span></code></pre></div>
 <p>Attributes (see <code>PromptDefinition</code> /
 <code>_build_prompt</code> in <code>hprc/parser.py</code>):</p>
 <table>
@@ -470,10 +488,10 @@ Truthy values: <code>yes</code>, <code>true</code>, <code>1</code>,
 <h3 id="response--placeholder-with-render"><code>&lt;response&gt;</code>
 — placeholder, with <code>render</code></h3>
 <p>Where a prompt's output is injected, bound by <code>id</code>.</p>
-<div class="sourceCode" id="cb11"><pre
-class="sourceCode html"><code class="sourceCode html"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">response</span><span class="ot"> id</span><span class="op">=</span><span class="st">&quot;summary&quot;</span><span class="dt">/&gt;</span>            <span class="co">&lt;!-- rendered (default) --&gt;</span></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">response</span><span class="ot"> id</span><span class="op">=</span><span class="st">&quot;summary&quot;</span><span class="ot"> render</span><span class="op">=</span><span class="st">&quot;yes&quot;</span><span class="dt">&gt;&lt;/</span><span class="kw">response</span><span class="dt">&gt;</span></span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">response</span><span class="ot"> id</span><span class="op">=</span><span class="st">&quot;audit&quot;</span><span class="ot"> render</span><span class="op">=</span><span class="st">&quot;no&quot;</span><span class="dt">/&gt;</span>  <span class="co">&lt;!-- executed, but NOT shown --&gt;</span></span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre
+class="sourceCode html"><code class="sourceCode html"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">response</span><span class="ot"> id</span><span class="op">=</span><span class="st">&quot;summary&quot;</span><span class="dt">/&gt;</span>            <span class="co">&lt;!-- rendered (default) --&gt;</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">response</span><span class="ot"> id</span><span class="op">=</span><span class="st">&quot;summary&quot;</span><span class="ot"> render</span><span class="op">=</span><span class="st">&quot;yes&quot;</span><span class="dt">&gt;&lt;/</span><span class="kw">response</span><span class="dt">&gt;</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">response</span><span class="ot"> id</span><span class="op">=</span><span class="st">&quot;audit&quot;</span><span class="ot"> render</span><span class="op">=</span><span class="st">&quot;no&quot;</span><span class="dt">/&gt;</span>  <span class="co">&lt;!-- executed, but NOT shown --&gt;</span></span></code></pre></div>
 <p><code>render="no"</code> (also <code>false</code>, <code>0</code>,
 <code>off</code>) means the prompt still <strong>executes</strong> and
 its response is still available to other prompts via
@@ -484,9 +502,9 @@ dot-notation</h3>
 <p>Resolves a dotted path against the namespace
 <code>{**bindings, "request": request}</code> and writes it
 (HTML-escaped) into the page.</p>
-<div class="sourceCode" id="cb12"><pre
-class="sourceCode html"><code class="sourceCode html"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">h1</span><span class="dt">&gt;&lt;</span><span class="kw">fill</span><span class="dt">&gt;</span>customer.name<span class="dt">&lt;/</span><span class="kw">fill</span><span class="dt">&gt;&lt;/</span><span class="kw">h1</span><span class="dt">&gt;</span></span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">p</span><span class="dt">&gt;</span>Account #<span class="dt">&lt;</span><span class="kw">fill</span><span class="dt">&gt;</span>request.path.customer_id<span class="dt">&lt;/</span><span class="kw">fill</span><span class="dt">&gt;&lt;/</span><span class="kw">p</span><span class="dt">&gt;</span></span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre
+class="sourceCode html"><code class="sourceCode html"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">h1</span><span class="dt">&gt;&lt;</span><span class="kw">fill</span><span class="dt">&gt;</span>customer.name<span class="dt">&lt;/</span><span class="kw">fill</span><span class="dt">&gt;&lt;/</span><span class="kw">h1</span><span class="dt">&gt;</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">p</span><span class="dt">&gt;</span>Account #<span class="dt">&lt;</span><span class="kw">fill</span><span class="dt">&gt;</span>request.path.customer_id<span class="dt">&lt;/</span><span class="kw">fill</span><span class="dt">&gt;&lt;/</span><span class="kw">p</span><span class="dt">&gt;</span></span></code></pre></div>
 <p>Dot paths (<code>resolve_path</code> in
 <code>hprc/request_context.py</code>) traverse dict keys, object
 attributes and integer list indices (<code>items.1</code>). A missing
@@ -497,16 +515,16 @@ inside a prompt body it is inserted raw.</p>
 <h3 id="param--request-query-shortcut"><code>&lt;param&gt;</code> —
 request query shortcut</h3>
 <p>Shorthand for <code>request.query.&lt;name&gt;</code>:</p>
-<div class="sourceCode" id="cb13"><pre
-class="sourceCode html"><code class="sourceCode html"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>Viewing product: <span class="dt">&lt;</span><span class="kw">param</span><span class="dt">&gt;</span>product<span class="dt">&lt;/</span><span class="kw">param</span><span class="dt">&gt;</span></span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre
+class="sourceCode html"><code class="sourceCode html"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>Viewing product: <span class="dt">&lt;</span><span class="kw">param</span><span class="dt">&gt;</span>product<span class="dt">&lt;/</span><span class="kw">param</span><span class="dt">&gt;</span></span></code></pre></div>
 <p><code>&lt;param&gt;product&lt;/param&gt;</code> is exactly
 <code>&lt;fill&gt;request.query.product&lt;/fill&gt;</code>. Missing
 params resolve to an empty string.</p>
 <h3 id="request-namespace"><code>request</code> namespace</h3>
 <p>HPRC normalizes any request object into a stable shape
 (<code>normalize_request</code>):</p>
-<div class="sourceCode" id="cb14"><pre
-class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>{ <span class="st">&quot;query&quot;</span>: {...}, <span class="st">&quot;path&quot;</span>: {...}, <span class="st">&quot;method&quot;</span>: <span class="st">&quot;GET&quot;</span> }</span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>{ <span class="st">&quot;query&quot;</span>: {...}, <span class="st">&quot;path&quot;</span>: {...}, <span class="st">&quot;method&quot;</span>: <span class="st">&quot;GET&quot;</span> }</span></code></pre></div>
 <p>Address it from fills: <code>request.query.*</code>,
 <code>request.path.*</code>, <code>request.method</code>. Accepted
 inputs:</p>
@@ -525,11 +543,11 @@ inputs:</p>
 prompts</h3>
 <p>Used <strong>inside a prompt body</strong> to splice in another
 prompt's response or constructed text:</p>
-<div class="sourceCode" id="cb15"><pre
-class="sourceCode html"><code class="sourceCode html"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">prompt</span><span class="ot"> id</span><span class="op">=</span><span class="st">&quot;upsell&quot;</span><span class="dt">&gt;</span></span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  Given this summary: <span class="dt">&lt;</span><span class="kw">include</span><span class="ot"> response</span><span class="op">=</span><span class="st">&quot;summary&quot;</span><span class="dt">/&gt;</span></span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  Suggest one upsell.</span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;/</span><span class="kw">prompt</span><span class="dt">&gt;</span></span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre
+class="sourceCode html"><code class="sourceCode html"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">prompt</span><span class="ot"> id</span><span class="op">=</span><span class="st">&quot;upsell&quot;</span><span class="dt">&gt;</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>  Given this summary: <span class="dt">&lt;</span><span class="kw">include</span><span class="ot"> response</span><span class="op">=</span><span class="st">&quot;summary&quot;</span><span class="dt">/&gt;</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>  Suggest one upsell.</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;/</span><span class="kw">prompt</span><span class="dt">&gt;</span></span></code></pre></div>
 <table>
 <thead>
 <tr>
@@ -561,14 +579,14 @@ graph (see below).</p>
 rule <strong>by name only</strong> via <code>condition="..."</code>; the
 predicate lives in Python and is supplied through
 <code>HPRCConfig.rules</code>.</p>
-<div class="sourceCode" id="cb16"><pre
-class="sourceCode python"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>config <span class="op">=</span> HPRCConfig(</span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>    llm_client<span class="op">=</span>MockLLMClient(),</span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>    rules<span class="op">=</span>{<span class="st">&quot;is_premium_customer&quot;</span>: <span class="kw">lambda</span> ctx: ctx[<span class="st">&quot;customer&quot;</span>][<span class="st">&quot;tier&quot;</span>] <span class="op">==</span> <span class="st">&quot;premium&quot;</span>},</span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div>
-<div class="sourceCode" id="cb17"><pre
-class="sourceCode html"><code class="sourceCode html"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">prompt</span><span class="ot"> id</span><span class="op">=</span><span class="st">&quot;summary&quot;</span><span class="ot"> condition</span><span class="op">=</span><span class="st">&quot;is_premium_customer&quot;</span><span class="dt">&gt;</span> … <span class="dt">&lt;/</span><span class="kw">prompt</span><span class="dt">&gt;</span></span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">section</span><span class="dt">&gt;&lt;</span><span class="kw">response</span><span class="ot"> id</span><span class="op">=</span><span class="st">&quot;summary&quot;</span><span class="dt">/&gt;&lt;/</span><span class="kw">section</span><span class="dt">&gt;</span></span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>config <span class="op">=</span> HPRCConfig(</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>    llm_client<span class="op">=</span>MockLLMClient(),</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>    rules<span class="op">=</span>{<span class="st">&quot;is_premium_customer&quot;</span>: <span class="kw">lambda</span> ctx: ctx[<span class="st">&quot;customer&quot;</span>][<span class="st">&quot;tier&quot;</span>] <span class="op">==</span> <span class="st">&quot;premium&quot;</span>},</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div>
+<div class="sourceCode" id="cb19"><pre
+class="sourceCode html"><code class="sourceCode html"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">prompt</span><span class="ot"> id</span><span class="op">=</span><span class="st">&quot;summary&quot;</span><span class="ot"> condition</span><span class="op">=</span><span class="st">&quot;is_premium_customer&quot;</span><span class="dt">&gt;</span> … <span class="dt">&lt;/</span><span class="kw">prompt</span><span class="dt">&gt;</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">section</span><span class="dt">&gt;&lt;</span><span class="kw">response</span><span class="ot"> id</span><span class="op">=</span><span class="st">&quot;summary&quot;</span><span class="dt">/&gt;&lt;/</span><span class="kw">section</span><span class="dt">&gt;</span></span></code></pre></div>
 <h3 id="how-hprc-uses-a-rule">How HPRC uses a rule</h3>
 <p>A rule is a <strong>per-prompt gate</strong> — it does
 <strong>not</strong> decide whether the renderer runs (the renderer
@@ -599,13 +617,13 @@ evaluates each prompt's condition <strong>independently</strong>, up
 front. There is deliberately <strong>no expression language</strong> in
 templates — you can't write <code>condition="a and b"</code>. For
 compound logic, put it <strong>inside one rule function</strong>:</p>
-<div class="sourceCode" id="cb18"><pre
-class="sourceCode python"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>rules<span class="op">=</span>{</span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;is_premium_customer&quot;</span>: <span class="kw">lambda</span> ctx: ctx[<span class="st">&quot;customer&quot;</span>][<span class="st">&quot;tier&quot;</span>] <span class="op">==</span> <span class="st">&quot;premium&quot;</span>,</span>
-<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;eligible_for_upsell&quot;</span>: <span class="kw">lambda</span> ctx: (</span>
-<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>        ctx[<span class="st">&quot;customer&quot;</span>][<span class="st">&quot;tier&quot;</span>] <span class="op">==</span> <span class="st">&quot;premium&quot;</span> <span class="kw">and</span> ctx[<span class="st">&quot;account&quot;</span>][<span class="st">&quot;balance&quot;</span>] <span class="op">&gt;</span> <span class="dv">0</span></span>
-<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>    ),</span>
-<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb20"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>rules<span class="op">=</span>{</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;is_premium_customer&quot;</span>: <span class="kw">lambda</span> ctx: ctx[<span class="st">&quot;customer&quot;</span>][<span class="st">&quot;tier&quot;</span>] <span class="op">==</span> <span class="st">&quot;premium&quot;</span>,</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;eligible_for_upsell&quot;</span>: <span class="kw">lambda</span> ctx: (</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>        ctx[<span class="st">&quot;customer&quot;</span>][<span class="st">&quot;tier&quot;</span>] <span class="op">==</span> <span class="st">&quot;premium&quot;</span> <span class="kw">and</span> ctx[<span class="st">&quot;account&quot;</span>][<span class="st">&quot;balance&quot;</span>] <span class="op">&gt;</span> <span class="dv">0</span></span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
 <p>The <code>rules</code> dict can hold many named rules; different
 prompts pick different ones by name (<code>hprc/rules.py</code>).</p>
 <h3 id="signature-and-error-behavior">Signature and error behavior</h3>
@@ -628,15 +646,15 @@ tool <em>names</em> (<code>tools="weather,crm_lookup"</code>) and your
 app registers the callables. HPRC resolves the names to
 <code>ToolDefinition</code> objects and forwards them to the LLM
 client.</p>
-<div class="sourceCode" id="cb19"><pre
-class="sourceCode python"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> crm_lookup(customer: <span class="bu">str</span>) <span class="op">-&gt;</span> <span class="bu">str</span>:</span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;Look up CRM notes for a customer.&quot;&quot;&quot;</span></span>
-<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="ss">f&quot;CRM notes for </span><span class="sc">{</span>customer<span class="sc">}</span><span class="ss">: no open tickets.&quot;</span></span>
-<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>config <span class="op">=</span> HPRCConfig(</span>
-<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>    llm_client<span class="op">=</span>MockLLMClient(),</span>
-<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>    tools<span class="op">=</span>{<span class="st">&quot;crm_lookup&quot;</span>: crm_lookup, <span class="st">&quot;pricing_engine&quot;</span>: pricing_engine},</span>
-<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div>
+<div class="sourceCode" id="cb21"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> crm_lookup(customer: <span class="bu">str</span>) <span class="op">-&gt;</span> <span class="bu">str</span>:</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;Look up CRM notes for a customer.&quot;&quot;&quot;</span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="ss">f&quot;CRM notes for </span><span class="sc">{</span>customer<span class="sc">}</span><span class="ss">: no open tickets.&quot;</span></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>config <span class="op">=</span> HPRCConfig(</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>    llm_client<span class="op">=</span>MockLLMClient(),</span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>    tools<span class="op">=</span>{<span class="st">&quot;crm_lookup&quot;</span>: crm_lookup, <span class="st">&quot;pricing_engine&quot;</span>: pricing_engine},</span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div>
 <p>When a prompt declares tools, HPRC runs a <strong>single tool
 iteration</strong>: it calls the model with the prompt + tool schemas;
 if the model asks to call one or more tools, HPRC <strong>runs your
@@ -681,12 +699,12 @@ parameter <code>id</code>.</li>
 <li><code>&lt;fill&gt;request.method&lt;/fill&gt;</code> → the HTTP
 method string.</li>
 </ul>
-<div class="sourceCode" id="cb20"><pre
-class="sourceCode python"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>html <span class="op">=</span> <span class="cf">await</span> hprc.render_template_string(</span>
-<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;&lt;a&gt;&lt;param&gt;product&lt;/param&gt;&lt;/a&gt;&lt;b&gt;&lt;fill&gt;request.query.product&lt;/fill&gt;&lt;/b&gt;&quot;</span>,</span>
-<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>    request<span class="op">=</span>{<span class="st">&quot;query&quot;</span>: {<span class="st">&quot;product&quot;</span>: <span class="st">&quot;WidgetPro&quot;</span>}},</span>
-<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a><span class="co"># -&gt; &lt;a&gt;WidgetPro&lt;/a&gt;&lt;b&gt;WidgetPro&lt;/b&gt;</span></span></code></pre></div>
+<div class="sourceCode" id="cb22"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>html <span class="op">=</span> <span class="cf">await</span> hprc.render_template_string(</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;&lt;a&gt;&lt;param&gt;product&lt;/param&gt;&lt;/a&gt;&lt;b&gt;&lt;fill&gt;request.query.product&lt;/fill&gt;&lt;/b&gt;&quot;</span>,</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>    request<span class="op">=</span>{<span class="st">&quot;query&quot;</span>: {<span class="st">&quot;product&quot;</span>: <span class="st">&quot;WidgetPro&quot;</span>}},</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a><span class="co"># -&gt; &lt;a&gt;WidgetPro&lt;/a&gt;&lt;b&gt;WidgetPro&lt;/b&gt;</span></span></code></pre></div>
 <hr />
 <h2 id="dependency-graphs">Dependency Graphs</h2>
 <p>A prompt depends on another when its body includes that prompt's
@@ -694,15 +712,15 @@ response (<code>&lt;include response="A"/&gt;</code>) or constructed
 text (<code>&lt;include prompt="A"/&gt;</code>). HPRC builds this graph
 automatically — you never sequence prompts by hand
 (<code>hprc/dependency_graph.py</code>).</p>
-<div class="sourceCode" id="cb21"><pre
-class="sourceCode python"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> hprc <span class="im">import</span> parse, build_graph, topological_levels</span>
-<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>tpl <span class="op">=</span> parse(</span>
-<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;&lt;prompt id=&quot;a&quot;&gt;A&lt;/prompt&gt;&#39;</span></span>
-<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;&lt;prompt id=&quot;b&quot;&gt;uses &lt;include response=&quot;a&quot;/&gt;&lt;/prompt&gt;&#39;</span></span>
-<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>graph <span class="op">=</span> build_graph(tpl.prompts)         <span class="co"># {&quot;a&quot;: set(), &quot;b&quot;: {&quot;a&quot;}}</span></span>
-<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>topological_levels(graph)                <span class="co"># [[&quot;a&quot;], [&quot;b&quot;]]</span></span></code></pre></div>
+<div class="sourceCode" id="cb23"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> hprc <span class="im">import</span> parse, build_graph, topological_levels</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>tpl <span class="op">=</span> parse(</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;&lt;prompt id=&quot;a&quot;&gt;A&lt;/prompt&gt;&#39;</span></span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;&lt;prompt id=&quot;b&quot;&gt;uses &lt;include response=&quot;a&quot;/&gt;&lt;/prompt&gt;&#39;</span></span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>graph <span class="op">=</span> build_graph(tpl.prompts)         <span class="co"># {&quot;a&quot;: set(), &quot;b&quot;: {&quot;a&quot;}}</span></span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>topological_levels(graph)                <span class="co"># [[&quot;a&quot;], [&quot;b&quot;]]</span></span></code></pre></div>
 <ul>
 <li><code>build_graph</code> produces
 <code>{prompt_id: {dependency_ids}}</code>, restricted to ids that are
@@ -725,17 +743,17 @@ walks the dependency levels and, within each level, runs the
 <code>asyncio.gather</code> while the rest run one by one — so a level
 can be sequential, concurrent, or a mix
 (<code>Renderer._execute_all</code>):</p>
-<div class="sourceCode" id="cb22"><pre
-class="sourceCode python"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> level <span class="kw">in</span> topological_levels(graph):</span>
-<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>    concurrent <span class="op">=</span> []</span>
-<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> pid <span class="kw">in</span> level:</span>
-<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>        prompt <span class="op">=</span> template.prompts[pid]</span>
-<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> prompt.is_async:            <span class="co"># async=&quot;yes&quot; → run concurrently</span></span>
-<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>            concurrent.append(<span class="va">self</span>._execute_prompt(prompt, ...))</span>
-<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:                          <span class="co"># default → run sequentially</span></span>
-<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> <span class="va">self</span>._execute_prompt(prompt, ...)</span>
-<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> concurrent:</span>
-<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">await</span> asyncio.gather(<span class="op">*</span>concurrent)</span></code></pre></div>
+<div class="sourceCode" id="cb24"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> level <span class="kw">in</span> topological_levels(graph):</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>    concurrent <span class="op">=</span> []</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> pid <span class="kw">in</span> level:</span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>        prompt <span class="op">=</span> template.prompts[pid]</span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> prompt.is_async:            <span class="co"># async=&quot;yes&quot; → run concurrently</span></span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>            concurrent.append(<span class="va">self</span>._execute_prompt(prompt, ...))</span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:                          <span class="co"># default → run sequentially</span></span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>            <span class="cf">await</span> <span class="va">self</span>._execute_prompt(prompt, ...)</span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> concurrent:</span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">await</span> asyncio.gather(<span class="op">*</span>concurrent)</span></code></pre></div>
 <p>Dependent prompts always wait for the responses they include,
 regardless of <code>async</code>. This is verified in
 <code>tests/test_async.py</code> (sequential by default;
@@ -751,8 +769,8 @@ link. Pass <code>gather_responses=True</code> to the render call and
 HPRC builds up a running transcript: each <strong>sequential</strong>
 prompt receives the responses of the earlier sequential prompts in the
 render, prepended as context.</p>
-<div class="sourceCode" id="cb23"><pre
-class="sourceCode python"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>html <span class="op">=</span> <span class="cf">await</span> hprc.render_template_string(tpl, config<span class="op">=</span>cfg, gather_responses<span class="op">=</span><span class="va">True</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb25"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>html <span class="op">=</span> <span class="cf">await</span> hprc.render_template_string(tpl, config<span class="op">=</span>cfg, gather_responses<span class="op">=</span><span class="va">True</span>)</span></code></pre></div>
 <ul>
 <li>Only <strong>sequential</strong> prompts participate —
 <code>async="yes"</code> (concurrent) prompts have no defined order, so
@@ -770,8 +788,8 @@ conversation history — <code>prior_context</code> — and a
 <h2 id="cache-support">Cache Support</h2>
 <p>Per-prompt caching is opt-in via the <code>cache</code> attribute,
 with a human-friendly TTL spec:</p>
-<div class="sourceCode" id="cb24"><pre
-class="sourceCode html"><code class="sourceCode html"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">prompt</span><span class="ot"> id</span><span class="op">=</span><span class="st">&quot;summary&quot;</span><span class="ot"> cache</span><span class="op">=</span><span class="st">&quot;24h&quot;</span><span class="dt">&gt;</span>...<span class="dt">&lt;/</span><span class="kw">prompt</span><span class="dt">&gt;</span></span></code></pre></div>
+<div class="sourceCode" id="cb26"><pre
+class="sourceCode html"><code class="sourceCode html"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">prompt</span><span class="ot"> id</span><span class="op">=</span><span class="st">&quot;summary&quot;</span><span class="ot"> cache</span><span class="op">=</span><span class="st">&quot;24h&quot;</span><span class="dt">&gt;</span>...<span class="dt">&lt;/</span><span class="kw">prompt</span><span class="dt">&gt;</span></span></code></pre></div>
 <p><code>parse_ttl</code> (in <code>hprc/cache.py</code>) accepts
 <code>s/m/h/d/w</code> units (<code>"30m"</code>, <code>"24h"</code>,
 <code>"2d"</code>, <code>"1w"</code>), a bare integer as seconds
@@ -784,14 +802,14 @@ everything that can change the output: the fully-resolved prompt text
 <code>model</code>, <code>temperature</code>, <code>max_tokens</code>,
 and the <strong>sorted</strong> tool names (so tool order doesn't
 matter). On a hit, the LLM is not called.</p>
-<div class="sourceCode" id="cb25"><pre
-class="sourceCode python"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>client <span class="op">=</span> MockLLMClient()</span>
-<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>cfg <span class="op">=</span> HPRCConfig(llm_client<span class="op">=</span>client, cache<span class="op">=</span>MemoryCache())</span>
-<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>tpl <span class="op">=</span> <span class="st">&#39;&lt;prompt id=&quot;a&quot; cache=&quot;24h&quot;&gt;hello&lt;/prompt&gt;&lt;x&gt;&lt;response id=&quot;a&quot;/&gt;&lt;/x&gt;&#39;</span></span>
-<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> hprc.render_template_string(tpl, config<span class="op">=</span>cfg)</span>
-<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> hprc.render_template_string(tpl, config<span class="op">=</span>cfg)</span>
-<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(client.calls) <span class="op">==</span> <span class="dv">1</span>   <span class="co"># second render served from cache</span></span></code></pre></div>
+<div class="sourceCode" id="cb27"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>client <span class="op">=</span> MockLLMClient()</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>cfg <span class="op">=</span> HPRCConfig(llm_client<span class="op">=</span>client, cache<span class="op">=</span>MemoryCache())</span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>tpl <span class="op">=</span> <span class="st">&#39;&lt;prompt id=&quot;a&quot; cache=&quot;24h&quot;&gt;hello&lt;/prompt&gt;&lt;x&gt;&lt;response id=&quot;a&quot;/&gt;&lt;/x&gt;&#39;</span></span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> hprc.render_template_string(tpl, config<span class="op">=</span>cfg)</span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> hprc.render_template_string(tpl, config<span class="op">=</span>cfg)</span>
+<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a><span class="cf">assert</span> <span class="bu">len</span>(client.calls) <span class="op">==</span> <span class="dv">1</span>   <span class="co"># second render served from cache</span></span></code></pre></div>
 <p>Cache backends implement the <code>Cache</code> ABC
 (<code>async get(key)</code>,
 <code>async set(key, value, ttl)</code>):</p>
@@ -809,17 +827,17 @@ be dropped in without touching the renderer. If
 <h2 id="provider-abstraction">Provider Abstraction</h2>
 <p>Every provider implements one coroutine
 (<code>hprc/llm.py</code>):</p>
-<div class="sourceCode" id="cb26"><pre
-class="sourceCode python"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> LLMClient(ABC):</span>
-<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>    <span class="at">@abstractmethod</span></span>
-<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> generate(</span>
-<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>,</span>
-<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>        prompt: <span class="bu">str</span>,</span>
-<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>        model: <span class="bu">str</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
-<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>        temperature: <span class="bu">float</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
-<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a>        max_tokens: <span class="bu">int</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
-<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a>        tools: <span class="bu">list</span>[ToolDefinition] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
-<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a>    ) <span class="op">-&gt;</span> <span class="bu">str</span>: ...</span></code></pre></div>
+<div class="sourceCode" id="cb28"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> LLMClient(ABC):</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>    <span class="at">@abstractmethod</span></span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> generate(</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>,</span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>        prompt: <span class="bu">str</span>,</span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>        model: <span class="bu">str</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>        temperature: <span class="bu">float</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a>        max_tokens: <span class="bu">int</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a>        tools: <span class="bu">list</span>[ToolDefinition] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb28-10"><a href="#cb28-10" aria-hidden="true" tabindex="-1"></a>    ) <span class="op">-&gt;</span> <span class="bu">str</span>: ...</span></code></pre></div>
 <h3 id="shipped-providers">Shipped providers</h3>
 <p>Every provider SDK is imported <strong>lazily</strong>, so
 <code>import hprc</code> never requires any of them. Install only the
@@ -875,13 +893,13 @@ blocks</td>
 </tr>
 </tbody>
 </table>
-<div class="sourceCode" id="cb27"><pre
-class="sourceCode python"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> hprc <span class="im">import</span> OpenAIClient, AnthropicClient, GeminiClient, OllamaClient</span>
-<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>HPRCConfig(llm_client<span class="op">=</span>OpenAIClient(api_key<span class="op">=</span>os.environ[<span class="st">&quot;OPENAI_API_KEY&quot;</span>]))</span>
-<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>HPRCConfig(llm_client<span class="op">=</span>AnthropicClient(api_key<span class="op">=</span>os.environ[<span class="st">&quot;ANTHROPIC_API_KEY&quot;</span>]))</span>
-<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>HPRCConfig(llm_client<span class="op">=</span>GeminiClient(api_key<span class="op">=</span>os.environ[<span class="st">&quot;GOOGLE_API_KEY&quot;</span>]))</span>
-<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a>HPRCConfig(llm_client<span class="op">=</span>OllamaClient(base_url<span class="op">=</span><span class="st">&quot;http://localhost:11434/v1&quot;</span>, default_model<span class="op">=</span><span class="st">&quot;llama3&quot;</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb29"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> hprc <span class="im">import</span> OpenAIClient, AnthropicClient, GeminiClient, OllamaClient</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>HPRCConfig(llm_client<span class="op">=</span>OpenAIClient(api_key<span class="op">=</span>os.environ[<span class="st">&quot;OPENAI_API_KEY&quot;</span>]))</span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>HPRCConfig(llm_client<span class="op">=</span>AnthropicClient(api_key<span class="op">=</span>os.environ[<span class="st">&quot;ANTHROPIC_API_KEY&quot;</span>]))</span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>HPRCConfig(llm_client<span class="op">=</span>GeminiClient(api_key<span class="op">=</span>os.environ[<span class="st">&quot;GOOGLE_API_KEY&quot;</span>]))</span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a>HPRCConfig(llm_client<span class="op">=</span>OllamaClient(base_url<span class="op">=</span><span class="st">&quot;http://localhost:11434/v1&quot;</span>, default_model<span class="op">=</span><span class="st">&quot;llama3&quot;</span>))</span></code></pre></div>
 <p><strong>Client = provider, <code>model</code> =
 sub-selection.</strong> The client you put in <code>HPRCConfig</code>
 fixes the provider; a prompt's <code>model="..."</code> only picks the
@@ -892,16 +910,16 @@ variant within it.</p>
 <em>provider</em>, use <code>MultiProviderClient</code> (prefix routing)
 and/or <code>model_aliases</code> (logical names resolved before each
 call — also used in the cache key):</p>
-<div class="sourceCode" id="cb28"><pre
-class="sourceCode python"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>config <span class="op">=</span> HPRCConfig(</span>
-<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>    llm_client<span class="op">=</span>MultiProviderClient(</span>
-<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>        {<span class="st">&quot;openai&quot;</span>: OpenAIClient(), <span class="st">&quot;anthropic&quot;</span>: AnthropicClient()},</span>
-<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>        default<span class="op">=</span><span class="st">&quot;openai&quot;</span>,</span>
-<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>    ),</span>
-<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>    model_aliases<span class="op">=</span>{<span class="st">&quot;summarizer&quot;</span>: <span class="st">&quot;anthropic:claude-sonnet-4-6&quot;</span>},</span>
-<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a><span class="co"># template:  &lt;prompt model=&quot;summarizer&quot;&gt;   -&gt; routed to Anthropic as claude-sonnet-4-6</span></span>
-<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a><span class="co">#            &lt;prompt model=&quot;gpt-5&quot;&gt;         -&gt; no prefix -&gt; default (OpenAI)</span></span></code></pre></div>
+<div class="sourceCode" id="cb30"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>config <span class="op">=</span> HPRCConfig(</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>    llm_client<span class="op">=</span>MultiProviderClient(</span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>        {<span class="st">&quot;openai&quot;</span>: OpenAIClient(), <span class="st">&quot;anthropic&quot;</span>: AnthropicClient()},</span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>        default<span class="op">=</span><span class="st">&quot;openai&quot;</span>,</span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>    model_aliases<span class="op">=</span>{<span class="st">&quot;summarizer&quot;</span>: <span class="st">&quot;anthropic:claude-sonnet-4-6&quot;</span>},</span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a><span class="co"># template:  &lt;prompt model=&quot;summarizer&quot;&gt;   -&gt; routed to Anthropic as claude-sonnet-4-6</span></span>
+<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a><span class="co">#            &lt;prompt model=&quot;gpt-5&quot;&gt;         -&gt; no prefix -&gt; default (OpenAI)</span></span></code></pre></div>
 <h3 id="adding-another-provider">Adding another provider</h3>
 <p>Subclass <code>LLMClient</code>, implement <code>generate</code>, and
 lazy-import the SDK inside <code>_get_client</code>. No changes to the
@@ -944,9 +962,9 @@ tests/                   # pytest suite (asyncio_mode = auto)</code></pre>
 <p><code>pytest</code> is configured with
 <code>asyncio_mode = "auto"</code> (no <code>@pytest.mark.asyncio</code>
 needed) and <code>testpaths = ["tests"]</code>:</p>
-<div class="sourceCode" id="cb30"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install <span class="at">-e</span> <span class="st">&quot;.[dev]&quot;</span></span>
-<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="ex">pytest</span> <span class="at">-q</span></span></code></pre></div>
+<div class="sourceCode" id="cb32"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install <span class="at">-e</span> <span class="st">&quot;.[dev]&quot;</span></span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a><span class="ex">pytest</span> <span class="at">-q</span></span></code></pre></div>
 <p>The suite (76 tests) covers parsing, fill/path resolution, request
 normalization, rules, tool execution, rendering &amp; tacit prompts, the
 dependency graph, async concurrency, response gathering, caching, and a

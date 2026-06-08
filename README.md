@@ -4,6 +4,14 @@
 
 > **Declarative AI rendering for web applications.**
 
+[![PyPI version](https://img.shields.io/pypi/v/hprc-framework.svg)](https://pypi.org/project/hprc-framework/)
+[![Python versions](https://img.shields.io/pypi/pyversions/hprc-framework.svg)](https://pypi.org/project/hprc-framework/)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+
+```bash
+pip install hprc-framework
+```
+
 An open-source framework for declarative AI rendering. **Write SPREP templates** — HTML with embedded `<prompt>` / `<response>` elements — and let the HPRC Framework handle **prompt construction, dependency resolution, rule evaluation, tool invocation, caching, async execution, and response rendering**.
 
 ```
@@ -98,23 +106,33 @@ The renderer (`hprc/renderer.py`) is the part that coordinates all this. Everyth
 
 ## Install
 
-Install HPRC editable from the repo root:
+From PyPI:
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -e .
+pip install hprc-framework            # core (just pydantic) — then: import hprc
 ```
 
-Runtime dependency is just `pydantic>=2.0`. Optional extras:
+Optional provider / framework extras:
 
 ```bash
-pip install -e ".[openai]"    # real OpenAI provider (openai>=1.0)
-pip install -e ".[fastapi]"   # the FastAPI example (fastapi, uvicorn)
-pip install -e ".[dev]"       # tests (pytest, pytest-asyncio)
+pip install "hprc-framework[anthropic]"   # Claude provider (anthropic)
+pip install "hprc-framework[openai]"      # OpenAI / Ollama provider
+pip install "hprc-framework[gemini]"      # Gemini provider
+pip install "hprc-framework[fastapi]"     # FastAPI example (fastapi, uvicorn)
+pip install "hprc-framework[all]"         # every provider SDK
 ```
 
-Requires Python `>=3.9`.
+The only required runtime dependency is `pydantic>=2.0`; provider SDKs are optional and lazily imported. Requires Python `>=3.9`.
+
+**From source (for development):**
+
+```bash
+git clone https://github.com/HPRCFramework/hprc-framework
+cd hprc-framework
+python -m venv .venv && source .venv/bin/activate
+pip install -e ".[dev]"               # editable install + tests
+python -m pytest -q
+```
 
 ---
 

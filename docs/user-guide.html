@@ -89,18 +89,24 @@
 
     <section id="install">
       <h2>Install</h2>
-      <p>Install HPRC editable from the repo root:</p>
+      <p>Install from PyPI:</p>
       <div class="code-card">
         <div class="code-head"><span>shell</span><span class="lang">bash</span></div>
-<pre><code>cd Prep
-python -m venv .venv &amp;&amp; source .venv/bin/activate
-pip install -e .                # core (pydantic only)
-pip install -e ".[fastapi]"     # + FastAPI/uvicorn for the web example
-pip install -e ".[openai]"      # + the OpenAI provider
-pip install -e ".[dev]"         # + pytest / pytest-asyncio</code></pre>
+<pre><code>pip install hprc-framework                # core (pydantic only) — then: import hprc
+pip install "hprc-framework[anthropic]"   # + Claude provider
+pip install "hprc-framework[openai]"      # + OpenAI / Ollama provider
+pip install "hprc-framework[fastapi]"     # + FastAPI/uvicorn for the web example
+pip install "hprc-framework[all]"         # + every provider SDK</code></pre>
       </div>
-      <p>The only hard runtime dependency is <code>pydantic&gt;=2</code>. The OpenAI package is
-         lazily imported, so it is optional.</p>
+      <p>The only hard runtime dependency is <code>pydantic&gt;=2</code>; provider SDKs are
+         optional and lazily imported. For development, clone the repo and install editable:</p>
+      <div class="code-card">
+        <div class="code-head"><span>shell</span><span class="lang">bash</span></div>
+<pre><code>git clone https://github.com/HPRCFramework/hprc-framework
+cd hprc-framework
+python -m venv .venv &amp;&amp; source .venv/bin/activate
+pip install -e ".[dev]" &amp;&amp; python -m pytest -q</code></pre>
+      </div>
     </section>
 
     <section id="quickstart">
