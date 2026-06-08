@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Sales Dashboard — SPREP demo</title>
+  <style>
+    :root { --bg:#0f172a; --card:#1e293b; --line:#334155; --ink:#e2e8f0; --muted:#94a3b8;
+            --accent:#38bdf8; --good:#34d399; --warn:#fbbf24; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--bg); color:var(--ink);
+           font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+    header { padding:1.5rem 2rem 0; }
+    h1 { margin:0; font-size:1.6rem; }
+    .headline { color:var(--accent); font-size:1rem; margin:.3rem 0 0; min-height:1.2em; }
+    .meta { color:var(--muted); font-size:.85rem; }
+    .grid { display:grid; gap:1rem; grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+            padding:1.5rem 2rem; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:1rem 1.2rem; }
+    .card h2 { margin:0 0 .5rem; font-size:.8rem; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); }
+    .kpi { font-size:1.9rem; font-weight:800; }
+    .kpi small { font-size:.9rem; color:var(--muted); font-weight:500; }
+    .ai { border-left:3px solid var(--accent); }
+    .ai.risk { border-left-color:var(--warn); }
+    .ai p { margin:0; line-height:1.55; }
+    .badge { display:inline-block; font-size:.7rem; font-weight:700; padding:.1rem .5rem;
+             border-radius:999px; background:#0c4a6e; color:var(--accent); margin-left:.4rem; }
+    pre { background:#0b1220; border:1px solid var(--line); border-radius:10px; padding:.9rem;
+          overflow:auto; font-size:.8rem; color:var(--ink); }
+    footer { color:var(--muted); font-size:.8rem; padding:0 2rem 2rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Sales Dashboard <span class="badge">AI + CSV</span></h1>
+    <!-- AI headline panel (independent) -->
+    <p class="headline"><response id="headline"/></p>
+    <p class="meta">Source: <fill>sales.source</fill> &middot;
+       <fill>sales.row_count</fill> rows &middot; <fill>sales.region_count</fill> regions</p>
+  </header>
+
+  <!-- =========== DATA PANELS (straight from the CSV-derived bindings) =========== -->
+  <section class="grid">
+    <div class="card">
+      <h2>Total revenue</h2>
+      <div class="kpi">$<fill>sales.total_revenue_fmt</fill></div>
+      <div class="meta">target $<fill>sales.target_fmt</fill></div>
+    </div>
+    <div class="card">
+      <h2>Units sold</h2>
+      <div class="kpi"><fill>sales.total_units</fill> <small>units</small></div>
+    </div>
+    <div class="card">
+      <h2>Top region</h2>
+      <div class="kpi"><fill>sales.top_region</fill></div>
+      <div class="meta">$<fill>sales.top_region_revenue_fmt</fill> revenue</div>
+    </div>
+    <div class="card">
+      <h2>Top product</h2>
+      <div class="kpi"><fill>sales.top_product</fill></div>
+      <div class="meta"><fill>sales.top_product_units</fill> units sold</div>
+    </div>
+  </section>
+
+  <!-- =========== AI PANELS (prompts; tacit — these blocks never render) =========== -->
+  <!--
+    The prompts below are independent of one another. Each opts into concurrency
+    with async="yes", so SPREP places them in the same dependency level and runs
+    them CONCURRENTLY (prompts are sequential by default). Each is grounded on the
+    CSV-derived data via <fill>.
+  -->
+  <prompt id="headline" model="gpt-5" temperature="0.7" async="yes">
+    Write a punchy one-line headline (max 12 words) for a sales dashboard.
+    Revenue is $<fill>sales.total_revenue_fmt</fill> across
+    <fill>sales.region_count</fill> regions; top product is <fill>sales.top_product</fill>.
+  </prompt>
+
+  <prompt id="exec_summary" model="gpt-5" temperature="0.3" async="yes">
+    You are a sales analyst. Given this data (CSV loaded into the page bindings):
+
+    <fill>sales.table_text</fill>
+
+    Totals: revenue $<fill>sales.total_revenue_fmt</fill>, units <fill>sales.total_units</fill>,
+    target $<fill>sales.target_fmt</fill>.
+    Write a 2-sentence executive summary.
+  </prompt>
+
+  <prompt id="focus" model="gpt-5" temperature="0.4" async="yes">
+    Top region is <fill>sales.top_region</fill> and top product is
+    <fill>sales.top_product</fill>. In one sentence, recommend where to focus next quarter.
+  </prompt>
+
+  <!-- Conditional AI panel: only runs when a CSV-derived rule fires. -->
+  <prompt id="risk" model="gpt-5" condition="underperforming" temperature="0.4" async="yes">
+    Revenue $<fill>sales.total_revenue_fmt</fill> is below the target of
+    $<fill>sales.target_fmt</fill>. Name the single biggest risk in one sentence.
+  </prompt>
+
+  <!-- Dependent prompt: needs exec_summary's answer, so SPREP runs it in a LATER level. -->
+  <prompt id="subject" model="gpt-5" temperature="0.5">
+    Write a short email subject line (max 8 words) for this summary:
+    <include response="exec_summary"/>
+  </prompt>
+
+  <section class="grid">
+    <div class="card ai" style="grid-column:1 / -1;">
+      <h2>Executive summary</h2>
+      <p><response id="exec_summary"/></p>
+    </div>
+    <div class="card ai">
+      <h2>Where to focus</h2>
+      <p><response id="focus"/></p>
+    </div>
+    <div class="card ai risk">
+      <h2>Risk watch</h2>
+      <p><response id="risk"/></p>
+    </div>
+    <div class="card ai">
+      <h2>Suggested email subject</h2>
+      <p><response id="subject"/></p>
+    </div>
+  </section>
+
+  <!-- Raw CSV table, rendered as preformatted text straight from bindings. -->
+  <section class="grid">
+    <div class="card" style="grid-column:1 / -1;">
+      <h2>Underlying data (sales.csv)</h2>
+      <pre><fill>sales.table_text</fill></pre>
+    </div>
+  </section>
+
+  <footer>Rendered by SPREP — CSV data panels and concurrent LLM panels in one pass.</footer>
+</body>
+</html>

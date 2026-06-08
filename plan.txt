@@ -1,0 +1,229 @@
+HPRC Framework — Project Plan
+=====================================================
+CHECKPOINT: 2026-06-06 — library + 5 providers + docs + SPREP spec + dashboard
+  complete; rebranded to HPRC Framework + SPREP Templates; Apache-2.0 OPEN SOURCE
+  (no patent — that path was dropped); 66 tests green. Queued: Levels 2 & 3 +
+  Tooling/MCP; then optional rollout (git/GitHub/article/LinkedIn). See below.
+
+BRANDING (decided 2026-06-03 — supersedes the earlier Loomweave decision)
+  TWO-TIER NAMING:
+    • HPRC Framework = primary project + runtime engine.
+        Expansion: "HTML Prompt Response Construction".
+    • SPREP Templates = the declarative template LANGUAGE that HPRC renders.
+        Expansion: "Simple Prompt Response Embedded Pages". File extension: `.sprep.html`.
+    Relationship: "Developers write SPREP templates. The HPRC Framework renders
+    them."  (HPRC Framework ↓ supports → SPREP Templates)
+  Tagline: "Declarative AI rendering for web applications."
+  Attribution: "HPRC Framework · Created by Rajesh Ramani · SPREP Templates:
+    Simple Prompt Response Embedded Pages".
+  Naming: repo = `hprc-framework`; PyPI package = `hprc-framework`; import
+    package = `hprc`; config class = `HPRCConfig`; website = `hprcframework.dev`.
+  RENAME STATUS: DONE (2026-06-03). Two renames applied: (1) framework prep→hprc,
+    PREPConfig→HPRCConfig, prep-templating→hprc-framework; (2) template language
+    PREP→SPREP, expansion → "Simple Prompt Response Embedded Pages", extension
+    `.prep.html`→`.sprep.html`. Framework refs → HPRC; language refs → SPREP;
+    docs/CSS/README hero/LICENSE updated; 66 tests green. (Earlier brand names
+    Loomweave/Wovenly/PromptWeave/PromptFabric/Preppy rejected.)
+  TRADEMARK (optional, non-blocking): if pursuing the "HPRC" brand seriously, run
+    a USPTO TESS search (Class 9 + 42) + attorney clearance. Not required to open
+    source. SPREP is just a protocol name (no domain/trademark needed).
+
+
+WHAT IT IS
+  AI-native, web-framework-independent server-side templating library. Embed LLM
+  prompts directly in HTML; HPRC resolves data/request params, evaluates named
+  rules, builds a dependency graph from includes, runs prompts concurrently by
+  topological level, caches, and injects responses. Prompts are tacit (never
+  rendered). Provider-independent (Mock/OpenAI; Anthropic/Gemini/Ollama later).
+
+CURRENT STATE (built + verified, local only)
+  - hprc/ : 10 modules, pip-installable (pip install -e .)
+  - LLM providers: Mock, OpenAI, Anthropic, Gemini, Ollama/LM-Studio,
+    MultiProviderClient (prefix routing) + HPRCConfig.model_aliases
+  - examples/ : FastAPI app + standalone + dashboard (CSV-sourced) + customer_profile
+    (canonical: business logic -> JSON dict -> context -> template, same data in
+    prompt AND HTML; "age 55" demo)
+  - tests/ : 76 passing (provider conformance + tool-execution + gather suites); pyflakes clean
+  - RENAME context -> bindings (2026-06-07): the data dict passed to render_* is now
+    `bindings=` (avoids overloading "LLM context"). API-only; templates unchanged
+    (fills still resolve at the root, e.g. customer.age). RenderContext class +
+    request_context module unchanged.
+  - GATHER_RESPONSES (2026-06-07): render flag; each SEQUENTIAL (non-async) prompt
+    receives earlier sequential prompts' responses prepended as context. Async
+    prompts excluded (no defined order). Off by default. tests/test_gather.py.
+  - TOOL EXECUTION (2026-06-07): prompts that declare tools run a SINGLE tool
+    iteration (model call -> if it requests one or more tools, execute registered
+    fns with the model's args -> feed back -> ask model once more -> render that
+    response; render nothing if still a tool call after the iteration). Exactly one
+    round, NOT an agent loop. OpenAI/Ollama + Anthropic; Gemini TODO. Tool prompts
+    not cached. Multi-step agent loop = roadmap. See PLANNED ENHANCEMENTS (a).
+  - ASYNC DEFAULT (changed 2026-06-07): prompts run SEQUENTIALLY by default;
+    concurrency is opt-in via async="yes" (was concurrent-by-default). Docs/spec/
+    tests/dashboard updated to match.
+  - Docs rewritten more "book-like" (README: What is HPRC / Why / plain-English
+    pipeline / context-vs-request section); SPREP spec clarified (normalize,
+    serialize, cache, escaping); "web-framework-independent" reframed as
+    "integrates with FastAPI/Flask/Django or standalone".
+  - README.md, ARCHITECTURE.md, LICENSE (Apache-2.0) + NOTICE, pyproject.toml
+  - docs/ : index.html, user-guide.html, architecture.html (offline HTML docs) +
+    docs/build.py (pandoc Markdown->styled HTML); README.html + PORTFOLIO.html
+    generated from the .md (run: python docs/build.py)
+  - sprep/ : SPREP template-language spec (sprep-spec.md + sprep-spec.html) — "PR"
+    for SPREP as a first-class, citable language; HPRC is the reference impl.
+  - docs/PROVISIONAL_PATENT_DRAFT.md : full provisional disclosure + draft claims
+  - Adversarial multi-agent review completed; 7 low-sev findings fixed.
+
+PLANNED ENHANCEMENTS — mixing LLM output with NON-LLM data sources
+  Real pages blend AI sections with DB rows, API results, code-rendered fragments.
+  Level 1 (DONE, works today): app fetches everything (SQL/REST/CSV/computed) into
+    the `context` dict; templates render via <fill>; prompts can <fill> the same
+    data so the LLM is grounded on it. The dashboard example demonstrates this with
+    a CSV-sourced context.
+  Level 2 (TODO): raw/trusted HTML injection. <fill> HTML-escapes by design, so a
+    pre-rendered fragment (a table built by Python/Jinja, a chart SVG) gets mangled.
+    Add an opt-in: <fill raw="yes">...</fill> (and/or honor a markupsafe.Markup
+    value as already-safe). Localized to renderer serialization; add tests.
+  Level 3 (TODO): first-class async DATA PROVIDERS as a 4th seam, symmetric with
+    rules/tools:  HPRCConfig(data={"recent_orders": fetch_fn})  where fetch_fn(ctx,
+    request) is sync/async. Template: <data id="recent_orders"/> placeholder +
+    <fill>data.recent_orders...</fill> + <include data="recent_orders"/> inside
+    prompts. Data nodes join the SAME dependency graph as prompts, so independent
+    DB queries and LLM calls run CONCURRENTLY (asyncio.gather) and a prompt can
+    depend on a fetch. Extends renderer's resolve->order->execute->inject loop with
+    one more node type; no change to its philosophy.
+
+PLANNED ENHANCEMENTS — Tooling & MCP integration
+  (a) SINGLE-ITERATION TOOL EXECUTION — DONE (2026-06-07). When a prompt declares
+      tools, HPRC runs ONE iteration: call model -> if it requests one or more tools,
+      execute the registered callables with the model's args, feed results back, ask
+      the model once more -> render that response (or nothing if it is still a tool
+      call). Exactly one round, NOT an agent loop. LLMClient.generate_with_tools +
+      executor callback; OpenAI/Ollama + Anthropic (Mock scriptable for tests). Tool
+      prompts are not cached. 6 tests in tests/test_tool_execution.py.
+      REMAINING (the agent loop): MULTI-STEP loop, Gemini tool iteration, per-prompt
+      controls. This is the "later improve to an agent loop" step.
+  (b) MCP (Model Context Protocol) integration: register MCP servers in HPRCConfig
+      (e.g. mcp={...}); HPRC discovers their tools/resources and exposes them to
+      prompts via the SAME allowlist, namespaced (e.g. tools="mcp:filesystem.read,
+      weather"). Tool calls execute through the MCP client. Provider-agnostic — HPRC
+      mediates, so MCP tools work across OpenAI/Anthropic/Gemini/Ollama.
+  (c) TOOL/MCP RESULTS AS EMBEDDABLE CONTENT: results become first-class like prompt
+      responses — e.g. <include tool="..."/> and/or feeding dependent prompts — so
+      they join the dependency graph and the resolve->order->execute->inject loop.
+  Keeps the seam principles: tools/MCP are EXTERNAL (registered in HPRCConfig),
+  referenced by NAME (allowlist), with NO business logic in templates. Update the
+  SPREP spec (currently "no agent loop mandated") to cover the opt-in execution model
+  + MCP as a non-normative/optional extension.
+
+FUTURE EXECUTION MODELS — render-time vs. live (design discussion 2026-06-07)
+  CORE PRINCIPLE: HPRC's renderer is SYNCHRONOUS and BOUNDED — request -> produce
+  HTML -> return. It must terminate fast and predictably (you can't return a page
+  mid-loop; unbounded work breaks TTFB/timeouts/cost/server stability). So anything
+  unbounded or long-running must live OUTSIDE the render pass, in a different
+  execution model. Rationale for the single tool iteration today: page rendering
+  should stay simple, with a small tool allowance; an unbounded agent loop in the
+  render path is an anti-pattern for a templating engine.
+  THREE DISTINCT FUTURE TRACKS (do not conflate):
+    1. MULTI-STEP AGENT LOOP (still render-time, still BOUNDED by a step cap): for
+       harder tool chains within one render. Generalizes today's single iteration.
+       Stays synchronous; cap keeps render time predictable.
+    2. LIVE REGIONS / real-time widgets (a SEPARATE post-render execution model):
+       for a widget that "keeps running" — an agent making LLM/tool calls over time.
+       This is NOT rendering. At render time HPRC emits only a placeholder + a small
+       client hook (page returns immediately); a companion endpoint runs the
+       (possibly unbounded) agent loop and STREAMS updates via SSE/WebSocket/polling.
+       Sketch: <live id="ticker" agent="market_watch" src="/hprc/live/ticker"></live>.
+       Keeps the "declare it in the template" philosophy while moving unbounded work
+       OFF the render path. Could be a non-normative SPREP "live region" extension.
+    3. STREAMING / PROGRESSIVE RENDER (real-time *feel*, NO agent): flush each
+       <response> to the browser as it completes (like streaming SSR / React
+       Suspense) instead of waiting for the whole page. Same bounded work, delivered
+       incrementally. Orthogonal to the agent question.
+  For a LOOPING WIDGET, structured-output -> fills runs PER TICK in the live process
+  (not the page render): each tick = call LLM -> structured JSON -> HPRC renders the
+  widget FRAGMENT with it -> push to client. Delivery either (A) stream rendered
+  fragments (client swaps innerHTML) or (B) stream structured field DELTAS that a
+  generic client patches by `data-field` annotations HPRC emits. HPRC = per-tick
+  fragment renderer; the live subsystem owns the loop + transport.
+  IDENTITY/SSO: HPRC is fully agnostic — it sits below auth (no sessions/tokens/IdP).
+  The app authenticates via its IdP (OIDC/SAML/OAuth) BEFORE calling HPRC and passes
+  identity-derived data via `bindings` + gates prompts via rules. Tools acting AS the
+  user: app threads the user's token into the tool callable. Cache key includes the
+  resolved prompt text (with user data) so no cross-user leakage.
+  FEDERATION (micro-frontend/multi-service): a SPREP render is self-contained
+  (template+bindings+config -> HTML), so it fits federation well — each widget/region
+  is an autonomous unit (own template/config/LLM/cache). Compose via server-side
+  splice OR <live src="other.svc/..."> regions. BOUNDARY: HPRC's include/dependency
+  graph is WITHIN one render, NOT across services — cross-widget data flow is a
+  composition-layer concern (host passes data), not a distributed prompt graph.
+
+NAMING TAXONOMY (decided 2026-06-07) — reserve "context" for model-context inputs
+  bindings        = your data, bound into <fill> in HTML + prompts.  [DONE: renamed]
+  prior_context   = prior conversation / message chain (roles preserved).  [roadmap]
+  retrieved_context = RAG grounding passages (+ provenance/retriever seam).  [roadmap]
+  request         = the web request namespace (request.query/path/method).  [exists]
+  Principle: `*_context` = feeds the model's context window; `bindings` = page data.
+
+FUTURE: CONVERSATIONAL HPRC (multi-turn) — design 2026-06-07, build later
+  Stateless renderer stays stateless; the APP owns persistence (session/DB/client
+  storage) across pages. HPRC provides INPUTS + OUTPUTS, not storage.
+  (a) prior_context IN: a message chain {role, content}[] passed to the render call;
+      prepended to each prompt's model conversation (roles preserved). Needs the
+      message-history path in LLMClient.generate (history=).
+  (b) <system> ROLE: a system-message directive (doc/section-scoped) prepended to
+      prompt model calls. Each call = [system] + [prior_context] + [this prompt].
+      (A standalone system prompt shapes others; it does not itself produce a
+      <response>.)
+  (c) RenderResult OUT: opt-in richer return (render_template(..., return_result=True))
+      with .html + .messages (the new user/assistant turns) so the client can append
+      to its stored history and replay next request. Default return stays str (HTML).
+  WIDGET CAVEAT: this synchronous capture-on-return only fits PAGE renders; a live
+  looping widget accumulates history inside the live endpoint, not via a return value.
+
+FUTURE: RESPONSE SHAPING — granular HTML / structured output (design 2026-06-07)
+  Today <response> inserts the model's text RAW (unescaped) — a latent XSS smell and
+  one-blob-per-slot. Two directions:
+  (1) STRUCTURED OUTPUT -> fills (PRIMARY, most HPRC-like): a prompt returns JSON
+      (provider structured-output/JSON mode + a schema); its fields fill many
+      placeholders, e.g. <fill>card.title</fill>. Template owns layout; values escaped
+      (safe); deterministic; granular; testable. Best for widgets + the live data-field
+      delta path. DEPENDS ON a future iteration construct (<each>/repeat) for lists.
+  (2) format ATTRIBUTE on <response>/<prompt>: format="text" (escaped, SAFE DEFAULT —
+      replaces today's raw), "markdown" (model->markdown->sanitized HTML; reliable +
+      safe; recommended for rich blocks), "html" (strip code fences + sanitize against
+      an allowlist; opt-in). Folds into the Level-2 raw/trusted-HTML sanitizer.
+  Prefer CONSTRAINING output up front (JSON/markdown) over post-hoc extraction from
+  free text. Also: fix the current raw-insertion default when `format` lands.
+
+DIRECTION (decided 2026-06-03): OPEN SOURCE under Apache-2.0 from the outset.
+  NO provisional patent (that path was dropped). Created by Rajesh Ramani — keep
+  attribution. Also serves as a PORTFOLIO / JOB-APPLICATION showcase, so keep the
+  repo, README and docs polished. Nothing is gated — go public whenever ready.
+  (Apache-2.0 LICENSE + NOTICE in place; pyproject license = Apache-2.0.)
+
+ROLLOUT (open source) — no gating; do when ready
+  DONE  Relicensed to Apache-2.0 (+ NOTICE); attribution to Rajesh Ramani throughout.
+  STEP 1  GIT + GITHUB
+            - Init a DEDICATED git repo inside ~/ai/Prep (NOT the home-dir repo;
+              `~` is an accidental git root). .gitignore already present.
+            - Commit; create GitHub repo `hprc-framework`; push.
+            - Optional: GitHub Pages to serve docs/ at hprcframework.dev.
+  STEP 2  (optional) PUBLISH TO PyPI as `hprc-framework` (python -m build; twine).
+  STEP 3  PUBLISH ARTICLE — technical write-up of the HPRC concept + architecture.
+  STEP 4  LINKEDIN POST — announce; link repo + article (job-showcase angle).
+
+NEXT ACTIONS WHEN RESUMING
+  - User will return to build a ROLLOUT plan including a LinkedIn post (unblocked).
+  - Consider DELETING docs/PROVISIONAL_PATENT_DRAFT.md — patent path dropped; it is
+    off-message for an open-source / job-showcase repo.
+  - Engineering queued: Level 2 (raw HTML injection) and Level 3 (async data
+    providers) from PLANNED ENHANCEMENTS above;
+    extend the dashboard example with a live data-provider panel once Level 3 lands.
+
+DEV QUICK REFERENCE
+  source .venv/bin/activate
+  pip install -e ".[dev]"          # or ".[all]" for every provider SDK
+  python -m pytest -q              # 72 passing
+  python examples/standalone.py    # minimal end-to-end
+  python examples/dashboard.py     # CSV-sourced context + concurrent AI panels
+  open docs/index.html             # offline HTML docs (user guide + architecture)

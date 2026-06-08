@@ -1,0 +1,10 @@
+HPRC Framework — HTML Prompt Response Construction
+Copyright 2026 Rajesh Ramani
+
+This product includes software developed by Rajesh Ramani.
+Architecture ideated and designed by Rajesh Ramani; developed with Claude (Anthropic).
+
+HPRC Framework renders SPREP Templates (Simple Prompt Response Embedded Pages):
+HTML with embedded <prompt>/<response> elements executed during rendering.
+
+Licensed under the Apache License, Version 2.0. See the LICENSE file.

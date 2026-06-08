@@ -1,0 +1,12 @@
+include LICENSE
+include NOTICE
+include README.md
+include CONTEXT.md
+include ARCHITECTURE.md
+include CLAUDE.md
+recursive-include sprep *.md *.html
+recursive-include docs *.html *.css *.py
+recursive-include examples *.py *.sprep.html *.html *.csv *.service *.sh *.md
+exclude examples/dashboard_output.html
+global-exclude __pycache__/* *.py[cod] .DS_Store
+prune _promo

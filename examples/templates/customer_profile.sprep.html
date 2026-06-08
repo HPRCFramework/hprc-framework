@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<!--
+  customer_profile.sprep.html — a SPREP template.
+
+  A SPREP template is ordinary HTML with two special things mixed in:
+    * <fill> ... </fill>  — drops a value from your data into the page (or a prompt)
+    * <prompt> ... </prompt> + <response/> — an LLM call and where its answer appears
+
+  KEY IDEA shown here: the SAME business data (passed in by the Python code as
+  `bindings`) is used in BOTH the visible HTML and the hidden prompt. Here, the
+  customer's age (computed in Python) appears in the page heading AND inside the
+  prompt that asks the model for a greeting.
+
+  Two data sources are available to <fill>:
+    * bindings   — your data, read at the root (e.g. customer.age, customer.name)
+    * request.*  — the incoming web request (e.g. request.query.product); <param>
+                   is a shortcut for request.query.*
+-->
+<html lang="en">
+<head><meta charset="utf-8"/><title>Customer — <fill>customer.name</fill></title></head>
+<body>
+
+  <!-- ============================================================= -->
+  <!-- VISIBLE HTML — reads the business data from `bindings`         -->
+  <!-- ============================================================= -->
+  <h1><fill>customer.name</fill></h1>
+  <p>
+    Age: <fill>customer.age</fill> &middot;
+    Segment: <fill>customer.segment</fill> &middot;
+    Tier: <fill>customer.tier</fill> &middot;
+    City: <fill>customer.city</fill>
+  </p>
+  <p>Viewing product: <param>product</param></p>
+
+  <!-- ============================================================= -->
+  <!-- TACIT PROMPT — never shown; grounded on the SAME bindings data -->
+  <!-- (note customer.age is used here too)                          -->
+  <!-- ============================================================= -->
+  <prompt id="greeting" model="gpt-5" temperature="0.6">
+    Write a warm, one-sentence greeting for <fill>customer.name</fill>,
+    a <fill>customer.age</fill>-year-old "<fill>customer.segment</fill>" customer
+    from <fill>customer.city</fill> who is looking at "<param>product</param>".
+  </prompt>
+
+  <!-- The greeting's generated text is injected here -->
+  <section class="greeting">
+    <h2>Personalized greeting</h2>
+    <p><response id="greeting"/></p>
+  </section>
+
+</body>
+</html>

@@ -1,0 +1,23 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.log
+.DS_Store
+.env
+examples/dashboard_output.html
+examples/live/templates/*.bak
+
+# local marketing drafts (not part of the published package)
+_promo/
+
+# local agent state / private notes — never publish
+.claude/
+docs/PROVISIONAL_PATENT_DRAFT.md

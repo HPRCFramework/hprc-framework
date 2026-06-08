@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>HPRC — Documentation</title>
+  <link rel="stylesheet" href="assets/hprc-docs.css"/>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <a class="brand" href="index.html">
+      <span class="logo">HP</span>
+      <span><span class="name">HPRC</span><br/><span class="tag">Embedded Prompts</span></span>
+    </a>
+    <div class="nav-group nav-doclinks">
+      <h4>Documentation</h4>
+      <a href="index.html">Home</a>
+      <a href="../README.html">README</a>
+      <a href="user-guide.html">User Guide</a>
+      <a href="architecture.html">Architecture &amp; Design</a>
+      <a href="../sprep/sprep-spec.html">SPREP Spec</a>
+      <a href="../PORTFOLIO.html">Portfolio</a>
+    </div>
+    <div class="nav-group">
+      <h4>Reference (Markdown)</h4>
+      <a href="../README.md">README.md</a>
+      <a href="../ARCHITECTURE.md">ARCHITECTURE.md</a>
+    </div>
+    <div class="nav-group">
+      <h4>Status</h4>
+      <a href="#status">Status</a>
+    </div>
+  </aside>
+
+  <main class="content">
+    <p class="eyebrow">HTML Prompt Response Construction</p>
+    <h1>HPRC Documentation</h1>
+    <p class="lead">An AI-native server-side templating engine that integrates with any web
+       framework — FastAPI, Flask, Django — or runs standalone. Embed LLM prompts directly
+       inside your HTML and have them executed during rendering — like JSP or PHP, but for
+       prompts.</p>
+
+    <span class="pill">v0.1.0</span>
+    <span class="pill teal">Python 3.9+</span>
+    <span class="pill gray">Provider-independent</span>
+    <span class="pill gray">Async</span>
+
+    <div class="doc-cards">
+      <a class="card" href="../README.html">
+        <div class="ic">📖</div>
+        <h3>README</h3>
+        <p>Start here — the project explained in plain language: what HPRC is, why it
+           exists, how it works, and how your data flows into prompts and the page.</p>
+        <span class="pill">Read first</span>
+      </a>
+      <a class="card" href="user-guide.html">
+        <div class="ic">📘</div>
+        <h3>User Guide</h3>
+        <p>Install, quick start, the full template syntax reference, rules, tools,
+           request parameters, dependency graphs, async, caching, and a runnable
+           FastAPI example.</p>
+        <span class="pill">Start here</span>
+      </a>
+      <a class="card" href="architecture.html">
+        <div class="ic">🏗️</div>
+        <h3>Architecture &amp; Design</h3>
+        <p>The big picture, the render pipeline, tools, the LLM adapters, the module
+           layout, a worked example — and the <a href="architecture.html#roadmap">roadmap</a>.</p>
+        <span class="pill teal">Deep dive</span>
+      </a>
+      <a class="card" href="../sprep/sprep-spec.html">
+        <div class="ic">📐</div>
+        <h3>SPREP Spec</h3>
+        <p>The formal SPREP template-language specification — elements, attributes,
+           execution semantics, and conformance. HPRC is the reference implementation.</p>
+        <span class="pill gray">Specification</span>
+      </a>
+    </div>
+
+    <h2 id="what">What HPRC does</h2>
+    <p>You write a normal HTML page and drop <code>&lt;prompt&gt;</code> blocks into it. At
+       render time, HPRC resolves each prompt's text (filling in data, request parameters
+       and the responses of <em>other</em> prompts), figures out the execution order
+       automatically, runs prompts concurrently where it can, caches results, and stitches
+       each <code>&lt;response&gt;</code> back into the final HTML. Prompts themselves are
+       <strong>tacit</strong> — they never appear in the output.</p>
+
+    <div class="grid">
+      <div class="card"><div class="ic">🫥</div><h3>Tacit prompts</h3><p>Prompt blocks execute but never render. Only <code>&lt;response&gt;</code> placeholders emit text.</p></div>
+      <div class="card"><div class="ic">🔗</div><h3>Auto dependencies</h3><p>One prompt can <code>&lt;include&gt;</code> another's response. HPRC builds the graph and orders execution for you.</p></div>
+      <div class="card"><div class="ic">⚡</div><h3>Concurrent</h3><p>Independent prompts in the same level run together with <code>asyncio</code>.</p></div>
+      <div class="card"><div class="ic">🧩</div><h3>Pluggable</h3><p>Swap the LLM provider, rules, tools and cache through one <code>HPRCConfig</code>.</p></div>
+      <div class="card"><div class="ic">📜</div><h3>Declarative</h3><p>Named rules &amp; tools — no expression language in templates; business logic stays in Python.</p></div>
+      <div class="card"><div class="ic">🗄️</div><h3>Cached</h3><p>Per-prompt TTL caching keyed on everything that determines the output.</p></div>
+    </div>
+
+    <h2 id="hello">Thirty-second taste</h2>
+    <div class="code-card">
+      <div class="code-head"><span>customer.sprep.html</span><span class="lang">html</span></div>
+<pre><code>&lt;h1&gt;Hello &lt;fill&gt;customer.name&lt;/fill&gt;&lt;/h1&gt;
+
+&lt;prompt id="summary" model="gpt-5" condition="is_premium" cache="24h"&gt;
+  Summarize the account for &lt;fill&gt;customer.name&lt;/fill&gt;
+  who is interested in &lt;param&gt;product&lt;/param&gt;.
+&lt;/prompt&gt;
+
+&lt;section&gt;&lt;response id="summary"/&gt;&lt;/section&gt;</code></pre>
+    </div>
+    <div class="code-card">
+      <div class="code-head"><span>app.py</span><span class="lang">python</span></div>
+<pre><code>import hprc
+from hprc import HPRCConfig, MockLLMClient
+
+config = HPRCConfig(
+    llm_client=MockLLMClient(),
+    rules={"is_premium": lambda ctx: ctx["customer"]["tier"] == "premium"},
+)
+
+html = await hprc.render_template(
+    template_path="customer.sprep.html",
+    request={"query": {"product": "WidgetPro"}, "path": {}, "method": "GET"},
+    bindings={"customer": {"name": "Ada", "tier": "premium"}},
+    config=config,
+)</code></pre>
+    </div>
+    <p>The application developer writes <strong>no prompt-orchestration logic</strong>. See the
+       <a href="user-guide.html">User Guide</a> for the full walkthrough.</p>
+
+    <h2 id="status">Status</h2>
+    <div class="callout warn">
+      <p><strong>Open source (Apache-2.0).</strong> Version 0.1.0 (Alpha). Created by
+         Rajesh Ramani. Early release — contributions and feedback welcome.</p>
+    </div>
+
+    <div class="foot">
+      HPRC Framework · Created by Rajesh Ramani · SPREP Templates: Simple Prompt Response Embedded Pages
+    </div>
+  </main>
+</div>
+</body>
+</html>

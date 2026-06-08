@@ -1,0 +1,18 @@
+[Unit]
+Description=HPRC Live Demo (Claude)
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+WorkingDirectory=%h/hprc-demo/Prep
+EnvironmentFile=%h/hprc-demo/hprc-demo.env
+Environment=HPRC_DEMO_PORT=8123
+ExecStartPre=/bin/sleep 5
+ExecStartPre=-/usr/bin/fuser -k 8123/tcp
+ExecStart=%h/hprc-demo/Prep/.venv/bin/python %h/hprc-demo/Prep/examples/live/app.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

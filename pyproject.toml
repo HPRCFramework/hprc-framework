@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hprc-framework"
+version = "0.1.0"
+description = "HPRC Framework — HTML Prompt Response Construction: declarative AI rendering for web applications."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Rajesh Ramani" }]
+keywords = ["llm", "templating", "ai", "prompts", "html", "hprc", "sprep", "jinja", "jsp"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Text Processing :: Markup :: HTML",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+]
+dependencies = [
+    "pydantic>=2.0",
+]
+
+[project.optional-dependencies]
+openai = ["openai>=1.0"]
+anthropic = ["anthropic>=0.40"]
+gemini = ["google-genai>=0.3"]
+ollama = ["openai>=1.0"]
+fastapi = ["fastapi>=0.100", "uvicorn>=0.23", "python-multipart>=0.0.6"]
+dev = ["pytest>=7.0", "pytest-asyncio>=0.21"]
+all = ["openai>=1.0", "anthropic>=0.40", "google-genai>=0.3"]
+
+[project.urls]
+Homepage = "https://hprcframework.dev"
+Documentation = "https://hprcframework.dev"
+Repository = "https://github.com/HPRCFramework/hprc-framework"
+Issues = "https://github.com/HPRCFramework/hprc-framework/issues"
+
+[tool.setuptools.packages.find]
+include = ["hprc*"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

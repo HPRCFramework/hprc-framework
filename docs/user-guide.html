@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>HPRC — User Guide</title>
+  <link rel="stylesheet" href="assets/hprc-docs.css"/>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <a class="brand" href="index.html">
+      <span class="logo">HP</span>
+      <span><span class="name">HPRC</span><br/><span class="tag">User Guide</span></span>
+    </a>
+    <div class="nav-group nav-doclinks">
+      <h4>Documentation</h4>
+      <a href="index.html">Home</a>
+      <a href="user-guide.html">User Guide</a>
+      <a href="architecture.html">Architecture &amp; Design</a>
+      <a href="../sprep/sprep-spec.html">SPREP Spec</a>
+    </div>
+    <div class="nav-group">
+      <h4>Getting started</h4>
+      <a href="#what">What &amp; why</a>
+      <a href="#install">Install</a>
+      <a href="#quickstart">Quick start</a>
+      <a href="#entrypoints">Entry points</a>
+    </div>
+    <div class="nav-group">
+      <h4>Template syntax</h4>
+      <a href="#prompt">&lt;prompt&gt;</a>
+      <a href="#response">&lt;response&gt;</a>
+      <a href="#fill">&lt;fill&gt;</a>
+      <a href="#param">&lt;param&gt;</a>
+      <a href="#request">request namespace</a>
+      <a href="#include">&lt;include&gt;</a>
+    </div>
+    <div class="nav-group">
+      <h4>Features</h4>
+      <a href="#rules">Rules</a>
+      <a href="#tools">Tools</a>
+      <a href="#dependencies">Dependency graphs</a>
+      <a href="#async">Async execution</a>
+      <a href="#cache">Cache support</a>
+      <a href="#providers">Providers</a>
+      <a href="#config">HPRCConfig API</a>
+    </div>
+    <div class="nav-group">
+      <h4>Examples &amp; more</h4>
+      <a href="#fastapi">FastAPI app</a>
+      <a href="#standalone">Standalone</a>
+      <a href="#tests">Running tests</a>
+      <a href="#gotchas">Gotchas &amp; FAQ</a>
+    </div>
+  </aside>
+
+  <main class="content">
+    <p class="eyebrow">User Documentation</p>
+    <h1>HPRC User Guide</h1>
+    <p class="lead">Everything you need to write templates that embed LLM prompts and
+       render them to HTML — with runnable examples throughout.</p>
+
+    <section id="what">
+      <h2>What &amp; why</h2>
+      <p>Most “LLM + web” code today is imperative glue: you receive a request, hand-build
+         prompt strings in Python, manually sequence dependent calls, await them, and splice
+         the text into a template. The orchestration lives far from the page it produces.</p>
+      <p>HPRC inverts that. The <strong>template is the source of truth</strong>:</p>
+      <ul>
+        <li>The page author writes prompts inline, next to where their output will appear.</li>
+        <li>The application developer supplies only <em>data and policy</em> — a <code>bindings</code> dict,
+            named rules, allowlisted tools, an LLM provider and a cache — via one
+            <code>HPRCConfig</code>.</li>
+        <li>HPRC does the orchestration: condition evaluation, fill resolution, dependency
+            ordering, concurrency, caching and serialization.</li>
+      </ul>
+      <div class="callout">
+        <p><strong>Mental model.</strong> <code>&lt;prompt&gt;</code> blocks are
+           <em>tacit</em> (they execute but never render). <code>&lt;response&gt;</code>
+           placeholders are where answers appear. Everything else is ordinary HTML.</p>
+      </div>
+    </section>
+
+    <section id="install">
+      <h2>Install</h2>
+      <p>Install HPRC editable from the repo root:</p>
+      <div class="code-card">
+        <div class="code-head"><span>shell</span><span class="lang">bash</span></div>
+<pre><code>cd Prep
+python -m venv .venv &amp;&amp; source .venv/bin/activate
+pip install -e .                # core (pydantic only)
+pip install -e ".[fastapi]"     # + FastAPI/uvicorn for the web example
+pip install -e ".[openai]"      # + the OpenAI provider
+pip install -e ".[dev]"         # + pytest / pytest-asyncio</code></pre>
+      </div>
+      <p>The only hard runtime dependency is <code>pydantic&gt;=2</code>. The OpenAI package is
+         lazily imported, so it is optional.</p>
+    </section>
+
+    <section id="quickstart">
+      <h2>Quick start</h2>
+      <p>A complete, offline example using the deterministic <code>MockLLMClient</code> (no API
+         key needed).</p>
+      <div class="code-card">
+        <div class="code-head"><span>quickstart.py</span><span class="lang">python</span></div>
+<pre><code>import asyncio
+import hprc
+from hprc import HPRCConfig, MockLLMClient, MemoryCache
+
+TEMPLATE = """&lt;!DOCTYPE html&gt;
+&lt;html&gt;&lt;body&gt;
+  &lt;h1&gt;Hello &lt;fill&gt;customer.name&lt;/fill&gt;&lt;/h1&gt;
+
+  &lt;prompt id="summary" model="gpt-5" condition="is_premium" cache="24h"&gt;
+    Customer &lt;fill&gt;customer.name&lt;/fill&gt; is interested in &lt;param&gt;product&lt;/param&gt;.
+    Write a one-line account summary.
+  &lt;/prompt&gt;
+
+  &lt;prompt id="upsell" model="gpt-5"&gt;
+    Given: &lt;include response="summary"/&gt;
+    Suggest one upsell.
+  &lt;/prompt&gt;
+
+  &lt;section&gt;&lt;h2&gt;Summary&lt;/h2&gt;&lt;response id="summary"/&gt;&lt;/section&gt;
+  &lt;section&gt;&lt;h2&gt;Upsell&lt;/h2&gt;&lt;response id="upsell"/&gt;&lt;/section&gt;
+&lt;/body&gt;&lt;/html&gt;"""
+
+async def main():
+    config = HPRCConfig(
+        llm_client=MockLLMClient(),
+        rules={"is_premium": lambda ctx: ctx["customer"]["tier"] == "premium"},
+        cache=MemoryCache(),
+    )
+    html = await hprc.render_template_string(
+        template_html=TEMPLATE,
+        request={"query": {"product": "WidgetPro"}, "path": {}, "method": "GET"},
+        bindings={"customer": {"name": "Ada", "tier": "premium"}},
+        config=config,
+    )
+    print(html)
+
+asyncio.run(main())</code></pre>
+      </div>
+      <p>HPRC runs <code>summary</code> first (because <code>upsell</code> includes its
+         response), feeds the answer into <code>upsell</code>, and renders both — while the
+         <code>&lt;prompt&gt;</code> blocks themselves never appear in the output.</p>
+    </section>
+
+    <section id="entrypoints">
+      <h2>Entry points</h2>
+      <p>All three are coroutines — drive them from an event loop.</p>
+      <table>
+        <thead><tr><th>Function</th><th>Use when</th></tr></thead>
+        <tbody>
+          <tr><td><code>render_template(template_path, request, bindings, config)</code></td><td>You have a <code>.sprep.html</code> file on disk.</td></tr>
+          <tr><td><code>render_template_string(template_html, request, bindings, config)</code></td><td>You have the template as a string.</td></tr>
+          <tr><td><code>render_string(template, request, bindings, config)</code></td><td>You already parsed a <code>TemplateDefinition</code> (e.g. to cache parsing).</td></tr>
+        </tbody>
+      </table>
+      <p><code>request</code> and <code>bindings</code> default to empty; <code>config</code>
+         defaults to a <code>HPRCConfig()</code> (Mock client + MemoryCache).</p>
+    </section>
+
+    <h2 id="syntax-ref">Template syntax reference</h2>
+
+    <section id="prompt">
+      <h3><code>&lt;prompt&gt;</code> — executable, tacit</h3>
+      <p>Defines a prompt to send to the model. <strong>Never rendered.</strong> Its body is
+         the prompt text, with embedded <code>&lt;fill&gt;</code>, <code>&lt;param&gt;</code>
+         and <code>&lt;include&gt;</code> directives resolved at render time.</p>
+      <div class="code-card">
+        <div class="code-head"><span>all attributes</span><span class="lang">html</span></div>
+<pre><code>&lt;prompt
+    id="summary"           &lt;!-- required, unique within the template --&gt;
+    model="gpt-5"          &lt;!-- passed to the LLM client --&gt;
+    condition="is_premium" &lt;!-- named rule; prompt skipped if false --&gt;
+    temperature="0.2"      &lt;!-- float, passed through --&gt;
+    max_tokens="500"       &lt;!-- int, passed through --&gt;
+    async="yes"            &lt;!-- "no" = run sequentially, not concurrently --&gt;
+    cache="24h"            &lt;!-- TTL: s/m/h/d/w, int seconds, or "0" to disable --&gt;
+    tools="crm_lookup,pricing_engine"&gt;  &lt;!-- allowlisted tool names --&gt;
+
+    Customer: &lt;fill&gt;customer.name&lt;/fill&gt;
+    Product:  &lt;param&gt;product&lt;/param&gt;
+    Summarize the account.
+&lt;/prompt&gt;</code></pre>
+      </div>
+      <table>
+        <thead><tr><th>Attribute</th><th>Default</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>id</code></td><td>— (required)</td><td>Links this prompt to its <code>&lt;response&gt;</code> and to <code>&lt;include&gt;</code>s.</td></tr>
+          <tr><td><code>model</code></td><td><code>None</code></td><td>Model identifier handed to the client.</td></tr>
+          <tr><td><code>condition</code></td><td>none</td><td>Named rule gating execution (see <a href="#rules">Rules</a>).</td></tr>
+          <tr><td><code>temperature</code></td><td><code>None</code></td><td>Float generation parameter.</td></tr>
+          <tr><td><code>max_tokens</code></td><td><code>None</code></td><td>Integer token cap.</td></tr>
+          <tr><td><code>async</code></td><td><code>no</code></td><td>Sequential by default; <code>async="yes"</code> opts this prompt into concurrent execution with other async prompts in its level.</td></tr>
+          <tr><td><code>cache</code></td><td>none</td><td>TTL spec; absent/empty/<code>0</code> means no caching.</td></tr>
+          <tr><td><code>tools</code></td><td>none</td><td>Comma-separated allowlist of registered tool names.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="response">
+      <h3><code>&lt;response&gt;</code> — placeholder, with <code>render</code></h3>
+      <p>Marks where a prompt's generated text is inserted, bound by <code>id</code>.</p>
+      <div class="code-card">
+        <div class="code-head"><span>html</span><span class="lang">html</span></div>
+<pre><code>&lt;response id="summary" render="yes"&gt;&lt;/response&gt;   &lt;!-- visible (default) --&gt;
+&lt;response id="summary" render="no"/&gt;             &lt;!-- generated but hidden --&gt;</code></pre>
+      </div>
+      <div class="callout ok">
+        <p><strong>Hidden but available.</strong> A <code>render="no"</code> response is still
+           executed and can be pulled into other prompts via
+           <code>&lt;include response="…"/&gt;</code> — perfect for an intermediate generation
+           you don't want on the page. Truthy values for <code>render</code>:
+           <code>yes/true/1/on</code>; everything else is hidden.</p>
+      </div>
+    </section>
+
+    <section id="fill">
+      <h3><code>&lt;fill&gt;</code> — data, dot-notation</h3>
+      <p>Resolves a dotted path against the bindings (and the <code>request</code> namespace).
+         Missing paths resolve to an empty string. In rendered HTML the value is
+         <strong>HTML-escaped</strong>; inside a prompt body it is inserted raw.</p>
+      <div class="code-card">
+        <div class="code-head"><span>html → resolves</span><span class="lang">html</span></div>
+<pre><code>&lt;fill&gt;customer.name&lt;/fill&gt;            → bindings["customer"]["name"]
+&lt;fill&gt;customer.profile.tier&lt;/fill&gt;    → nested dict / object attribute
+&lt;fill&gt;items.0&lt;/fill&gt;                  → list index 0</code></pre>
+      </div>
+    </section>
+
+    <section id="param">
+      <h3><code>&lt;param&gt;</code> — request query shortcut</h3>
+      <p>Shorthand for a request query parameter. These two are equivalent:</p>
+      <div class="code-card">
+        <div class="code-head"><span>html</span><span class="lang">html</span></div>
+<pre><code>&lt;param&gt;product&lt;/param&gt;
+&lt;fill&gt;request.query.product&lt;/fill&gt;</code></pre>
+      </div>
+    </section>
+
+    <section id="request">
+      <h3><code>request</code> namespace</h3>
+      <p>HPRC normalizes any request object into a stable shape addressable from templates:</p>
+      <div class="code-card">
+        <div class="code-head"><span>html</span><span class="lang">html</span></div>
+<pre><code>&lt;fill&gt;request.query.product&lt;/fill&gt;       &lt;!-- ?product=... --&gt;
+&lt;fill&gt;request.path.customer_id&lt;/fill&gt;    &lt;!-- /customer/{customer_id} --&gt;
+&lt;fill&gt;request.method&lt;/fill&gt;              &lt;!-- "GET" --&gt;</code></pre>
+      </div>
+      <p>Accepted request inputs: a FastAPI/Starlette <code>Request</code> (uses
+         <code>query_params</code>/<code>path_params</code>/<code>method</code>); a plain dict
+         <code>{"query":…, "path":…, "method":…}</code>; any object exposing those attributes;
+         or <code>None</code>.</p>
+    </section>
+
+    <section id="include">
+      <h3><code>&lt;include&gt;</code> — compose prompts</h3>
+      <p>Pulls one prompt's output into another prompt's text. This is how you express
+         dependencies; HPRC detects them and orders execution automatically.</p>
+      <div class="code-card">
+        <div class="code-head"><span>html</span><span class="lang">html</span></div>
+<pre><code>&lt;include prompt="summary"/&gt;     &lt;!-- inserts summary's CONSTRUCTED PROMPT TEXT --&gt;
+&lt;include response="summary"/&gt;   &lt;!-- inserts summary's GENERATED RESPONSE --&gt;</code></pre>
+      </div>
+      <div class="callout warn">
+        <p><strong>Validated at parse time.</strong> An <code>&lt;include&gt;</code> pointing
+           at an undefined prompt id raises a <code>ValueError</code> when the template is
+           parsed — typos fail loudly rather than silently dropping.</p>
+      </div>
+    </section>
+
+    <section id="rules">
+      <h2>Rules — conditional execution</h2>
+      <p>Templates reference rules by <em>name</em> only — there is no expression language.
+         You register the predicates in Python; each receives the bindings and returns a bool.</p>
+      <div class="code-card">
+        <div class="code-head"><span>python</span><span class="lang">python</span></div>
+<pre><code>RULES = {
+    "is_premium_customer": lambda ctx: ctx["customer"]["tier"] == "premium",
+    "has_balance":         lambda ctx: ctx["account"]["balance"] &gt; 0,
+}
+config = HPRCConfig(llm_client=MockLLMClient(), rules=RULES)</code></pre>
+      </div>
+      <p>A rule is a <strong>per-prompt gate</strong> — it does not decide whether the
+         <em>renderer</em> runs (that always happens); it decides whether <em>one prompt</em>
+         runs. At the start of a render, for a prompt with
+         <code>condition="is_premium_customer"</code> HPRC looks that name up in
+         <code>HPRCConfig.rules</code>, calls it with the <strong>bindings</strong> dict (the
+         function's <code>ctx</code> argument is your bindings, <em>not</em> the request), and
+         coerces the result to a bool. Truthy &rarr; the prompt runs and its
+         <code>&lt;response&gt;</code> is filled. Falsy &rarr; the prompt is <strong>skipped</strong>
+         (no model call) and its <code>&lt;response&gt;</code> renders empty (and any
+         <code>&lt;include response&gt;</code> of it resolves to <code>""</code>). A blank/absent
+         condition always runs.</p>
+      <p>Each prompt has <strong>at most one</strong> condition, evaluated independently — there is
+         no <code>and</code>/<code>or</code> in templates. Put compound logic
+         <em>inside one rule function</em> (<code>lambda ctx: ctx["a"] and ctx["b"]</code>); the
+         <code>rules</code> dict can hold many named rules that different prompts select by name.</p>
+      <div class="callout">
+        <p>A <strong>missing/unregistered</strong> rule name fails loudly — the render raises
+           <code>RuleError</code> naming the prompt and rule, so a typo in <code>condition=</code>
+           is caught rather than silently skipped. A rule that <em>runs but raises</em> (e.g. the
+           bindings lack a key it reads) is treated as "condition not met" and skips just that
+           prompt, so a data gap degrades gracefully.</p>
+      </div>
+    </section>
+
+    <section id="tools">
+      <h2>Tools — the model can call your functions</h2>
+      <p>Register tools by name; a prompt opts into a subset via its <code>tools</code>
+         attribute. When that prompt runs, HPRC executes a <strong>single tool iteration</strong>:
+         it calls the model with the tools; if the model asks to call one or more, HPRC runs your
+         registered function(s) with the model's arguments, feeds the result(s) back, and asks the
+         model once more — that response is rendered. If the model is still calling a tool after
+         that iteration, the prompt renders empty. Implemented for OpenAI/Ollama and Anthropic;
+         Gemini forwards schemas but doesn't run the iteration yet. (A multi-step agent loop is on
+         the roadmap.)</p>
+      <div class="code-card">
+        <div class="code-head"><span>python</span><span class="lang">python</span></div>
+<pre><code>def crm_lookup(customer: str) -&gt; str:
+    "Look up CRM notes for a customer."      # docstring → tool description
+    return f"CRM notes for {customer}"
+
+TOOLS = {"crm_lookup": crm_lookup, "pricing_engine": pricing_engine}
+config = HPRCConfig(llm_client=MockLLMClient(), tools=TOOLS)
+# template:  &lt;prompt id="s" tools="crm_lookup,pricing_engine"&gt; ... &lt;/prompt&gt;</code></pre>
+      </div>
+      <p>A tool value may be a bare callable (its docstring becomes the description) or a fully
+         built <code>ToolDefinition(name, func, description, parameters)</code>.</p>
+    </section>
+
+    <section id="dependencies">
+      <h2>Dependency graphs</h2>
+      <p>HPRC scans each prompt body for <code>&lt;include&gt;</code> directives, builds a
+         directed graph, and computes ordered execution levels. You never wire ordering by
+         hand.</p>
+      <div class="code-card">
+        <div class="code-head"><span>python</span><span class="lang">python</span></div>
+<pre><code>from hprc import parse, build_graph, topological_levels
+
+tpl = parse('&lt;prompt id="a"&gt;A&lt;/prompt&gt;'
+            '&lt;prompt id="b"&gt;uses &lt;include response="a"/&gt;&lt;/prompt&gt;')
+build_graph(tpl.prompts)          # {'a': set(), 'b': {'a'}}
+topological_levels(build_graph(tpl.prompts))   # [['a'], ['b']]</code></pre>
+      </div>
+      <p>A cycle raises <code>DependencyError</code>. Independent prompts land in the same
+         level and run concurrently.</p>
+    </section>
+
+    <section id="async">
+      <h2>Async execution</h2>
+      <p>Prompts run <strong>sequentially by default</strong> — one at a time, which is simple
+         and predictable. To run independent prompts together, opt them in with
+         <code>async="yes"</code>. Within each dependency level, the renderer runs the
+         <code>async="yes"</code> prompts concurrently with <code>asyncio.gather</code> while the
+         rest run one by one — so a level can be sequential, concurrent, or a mix:</p>
+      <div class="code-card">
+        <div class="code-head"><span>concept</span><span class="lang">python</span></div>
+<pre><code>for level in topological_levels(graph):
+    concurrent = []
+    for pid in level:
+        if prompt.is_async:        # async="yes" → run concurrently
+            concurrent.append(execute(prompt))
+        else:                       # default → awaited one at a time
+            await execute(prompt)
+    if concurrent:
+        await asyncio.gather(*concurrent)</code></pre>
+      </div>
+      <p>Dependent prompts always wait for the responses they include, regardless of
+         <code>async</code>.</p>
+    </section>
+
+    <section id="cache">
+      <h2>Cache support</h2>
+      <p>Per-prompt caching is opt-in via the <code>cache</code> attribute with a
+         human-friendly TTL.</p>
+      <div class="code-card">
+        <div class="code-head"><span>html</span><span class="lang">html</span></div>
+<pre><code>&lt;prompt id="summary" cache="24h"&gt;...&lt;/prompt&gt;   &lt;!-- 30m, 24h, 2d, 1w, "3600" --&gt;
+&lt;prompt id="live"    cache="0"&gt;...&lt;/prompt&gt;     &lt;!-- "0" / absent = no caching --&gt;</code></pre>
+      </div>
+      <p>The cache key is a SHA-256 over everything that can change the output: the
+         fully-resolved prompt text (which already embeds fills, params and included
+         responses), <code>model</code>, <code>temperature</code>, <code>max_tokens</code>, and
+         the <strong>sorted</strong> tool names (so tool order doesn't matter). On a hit, the
+         LLM is not called.</p>
+      <div class="code-card">
+        <div class="code-head"><span>python — second render is a cache hit</span><span class="lang">python</span></div>
+<pre><code>client = MockLLMClient()
+cfg = HPRCConfig(llm_client=client, cache=MemoryCache())
+tpl = '&lt;prompt id="a" cache="24h"&gt;hello&lt;/prompt&gt;&lt;x&gt;&lt;response id="a"/&gt;&lt;/x&gt;'
+
+await hprc.render_template_string(tpl, config=cfg)
+await hprc.render_template_string(tpl, config=cfg)
+assert len(client.calls) == 1   # second render served from cache</code></pre>
+      </div>
+      <p>Backends implement the <code>Cache</code> ABC (<code>async get(key)</code>,
+         <code>async set(key, value, ttl)</code>):</p>
+      <ul>
+        <li><code>MemoryCache</code> — in-process TTL cache; accepts an injectable
+            <code>time_func</code> for deterministic expiry in tests; has <code>clear()</code>.</li>
+        <li><code>NullCache</code> — stores nothing; every lookup misses.</li>
+      </ul>
+      <p>The abstraction is deliberately minimal so a Redis-backed cache can be dropped in
+         without touching the renderer.</p>
+    </section>
+
+    <section id="providers">
+      <h2>Providers</h2>
+      <p>Every backend implements one coroutine. The renderer is provider-blind.</p>
+      <div class="code-card">
+        <div class="code-head"><span>the interface</span><span class="lang">python</span></div>
+<pre><code>class LLMClient(ABC):
+    @abstractmethod
+    async def generate(self, prompt, model=None, temperature=None,
+                       max_tokens=None, tools=None) -&gt; str: ...</code></pre>
+      </div>
+      <div class="callout">
+        <p><strong>Client = provider, <code>model</code> = sub-selection.</strong> The client you
+           put in <code>HPRCConfig</code> fixes the provider; a prompt's <code>model="…"</code>
+           only picks the variant within it. Each provider SDK is imported <em>lazily</em>, so
+           <code>import hprc</code> needs none of them — install only the extras you use.</p>
+      </div>
+      <h3>Shipped providers</h3>
+      <table>
+        <thead><tr><th>Client</th><th>Backend</th><th>Extra</th></tr></thead>
+        <tbody>
+          <tr><td><code>MockLLMClient</code></td><td>deterministic, offline; echoes the request, records <code>.calls</code>; accepts a <code>responder</code></td><td>—</td></tr>
+          <tr><td><code>OpenAIClient(api_key, default_model)</code></td><td>official async <code>openai</code> client; tools → OpenAI function-tool schemas</td><td><code>openai</code></td></tr>
+          <tr><td><code>AnthropicClient(api_key, default_model, default_max_tokens)</code></td><td><code>anthropic</code> Messages API (Claude); supplies the <strong>required</strong> <code>max_tokens</code>; joins text blocks</td><td><code>anthropic</code></td></tr>
+          <tr><td><code>GeminiClient(api_key, default_model)</code></td><td><code>google-genai</code> async API; params under <code>config</code>, <code>max_tokens</code> → <code>max_output_tokens</code></td><td><code>gemini</code></td></tr>
+          <tr><td><code>OllamaClient(base_url, default_model)</code></td><td>local OpenAI-compatible endpoint (Ollama / LM Studio)</td><td>—</td></tr>
+          <tr><td><code>MultiProviderClient({name: client}, default=…)</code></td><td>routes by a <code>"provider:model"</code> prefix</td><td>—</td></tr>
+        </tbody>
+      </table>
+      <div class="code-card">
+        <div class="code-head"><span>pick a provider</span><span class="lang">python</span></div>
+<pre><code>from hprc import OpenAIClient, AnthropicClient, GeminiClient, OllamaClient
+
+HPRCConfig(llm_client=OpenAIClient(api_key=os.environ["OPENAI_API_KEY"]))
+HPRCConfig(llm_client=AnthropicClient(api_key=os.environ["ANTHROPIC_API_KEY"]))
+HPRCConfig(llm_client=GeminiClient(api_key=os.environ["GOOGLE_API_KEY"]))
+HPRCConfig(llm_client=OllamaClient(base_url="http://localhost:11434/v1",
+                                   default_model="llama3"))</code></pre>
+      </div>
+
+      <h3>Routing by <code>model</code> + portable aliases</h3>
+      <p>To let the <code>model</code> value also choose the <em>provider</em>, use
+         <code>MultiProviderClient</code> (prefix routing) and/or <code>model_aliases</code>
+         (logical names resolved before each call — and folded into the cache key):</p>
+      <div class="code-card">
+        <div class="code-head"><span>python</span><span class="lang">python</span></div>
+<pre><code>from hprc import MultiProviderClient, OpenAIClient, AnthropicClient
+
+config = HPRCConfig(
+    llm_client=MultiProviderClient(
+        {"openai": OpenAIClient(), "anthropic": AnthropicClient()},
+        default="openai",
+    ),
+    model_aliases={"summarizer": "anthropic:claude-sonnet-4-6"},
+)
+# template:  &lt;prompt model="summarizer"&gt;  -&gt; routed to Anthropic as claude-sonnet-4-6
+#            &lt;prompt model="gpt-5"&gt;        -&gt; no prefix -&gt; default (OpenAI)</code></pre>
+      </div>
+
+      <h3>Adding another provider</h3>
+      <p>Subclass <code>LLMClient</code>, implement <code>generate</code>, and lazy-import the SDK
+         inside <code>_get_client</code> — no changes to the renderer or templates. The mocked
+         conformance suite in <code>tests/test_providers.py</code> shows the contract every
+         client must satisfy (request mapping + text extraction); copy a case for your adapter.</p>
+    </section>
+
+    <section id="config">
+      <h2><code>HPRCConfig</code> API</h2>
+      <p>One object bundles the four pluggable seams. All fields have sensible defaults.</p>
+      <table>
+        <thead><tr><th>Field</th><th>Type</th><th>Default</th></tr></thead>
+        <tbody>
+          <tr><td><code>llm_client</code></td><td><code>LLMClient</code></td><td><code>MockLLMClient()</code></td></tr>
+          <tr><td><code>rules</code></td><td><code>{name: predicate(bindings)-&gt;bool}</code></td><td><code>{}</code></td></tr>
+          <tr><td><code>tools</code></td><td><code>{name: callable | ToolDefinition}</code></td><td><code>{}</code> (normalized on init)</td></tr>
+          <tr><td><code>cache</code></td><td><code>Cache</code></td><td><code>MemoryCache()</code></td></tr>
+          <tr><td><code>model_aliases</code></td><td><code>{logical: concrete}</code></td><td><code>{}</code></td></tr>
+        </tbody>
+      </table>
+      <p>Bare callables in <code>tools</code> are auto-wrapped into <code>ToolDefinition</code>s;
+         passing <code>cache=None</code> falls back to a fresh <code>MemoryCache</code>;
+         <code>model_aliases</code> maps logical model names to concrete ones (optionally
+         <code>"provider:model"</code> for a <code>MultiProviderClient</code>), resolved before
+         each call.</p>
+    </section>
+
+    <section id="fastapi">
+      <h2>FastAPI example</h2>
+      <p>The shipped <code>examples/fastapi_app.py</code> shows the full developer workflow.
+         Run it:</p>
+      <div class="code-card">
+        <div class="code-head"><span>shell</span><span class="lang">bash</span></div>
+<pre><code>pip install -e ".[fastapi]"
+uvicorn examples.fastapi_app:app --reload
+# open http://127.0.0.1:8000/customer/42?product=WidgetPro</code></pre>
+      </div>
+      <div class="code-card">
+        <div class="code-head"><span>the controller (essence)</span><span class="lang">python</span></div>
+<pre><code>@app.get("/customer/{customer_id}", response_class=HTMLResponse)
+async def customer_page(customer_id: str, request: Request):
+    bindings = {
+        "customer": load_customer(customer_id),
+        "account":  load_account(customer_id),
+    }
+    config = HPRCConfig(
+        llm_client=MockLLMClient(),                 # or OpenAIClient(...)
+        rules={"is_premium_customer":
+               lambda ctx: ctx["customer"]["tier"] == "premium"},
+        tools={"crm_lookup": crm_lookup, "pricing_engine": pricing_engine},
+        cache=MemoryCache(),
+    )
+    html = await hprc.render_template(
+        template_path="examples/templates/customer.sprep.html",
+        request=request, bindings=bindings, config=config,
+    )
+    return HTMLResponse(html)</code></pre>
+      </div>
+      <p>If <code>OPENAI_API_KEY</code> is set, the example automatically uses
+         <code>OpenAIClient</code>; otherwise it falls back to the offline mock so the demo runs
+         with no key. Note: the developer writes <strong>no prompt orchestration</strong> —
+         HPRC runs <code>summary</code> then <code>upsell</code> for you.</p>
+    </section>
+
+    <section id="standalone">
+      <h2>Standalone (no framework)</h2>
+      <div class="code-card">
+        <div class="code-head"><span>shell</span><span class="lang">bash</span></div>
+<pre><code>python examples/standalone.py</code></pre>
+      </div>
+      <p>Demonstrates the entire flow — bindings, a named rule, two dependent prompts and a
+         hidden response — with the offline mock client.</p>
+    </section>
+
+    <section id="tests">
+      <h2>Running tests</h2>
+      <div class="code-card">
+        <div class="code-head"><span>shell</span><span class="lang">bash</span></div>
+<pre><code>pip install -e ".[dev]"
+python -m pytest -q
+# 66 passed</code></pre>
+      </div>
+      <p>Coverage spans parsing, fill/param/rule resolution, the dependency graph, async
+         concurrency (including <code>async="no"</code>), cache behaviour (including TTL
+         expiry and <code>cache="0"</code>), hidden responses, tacit prompts, tool
+         registration, and a mocked provider conformance suite (OpenAI / Anthropic / Gemini /
+         Ollama / multi-provider routing / aliases). <code>asyncio_mode = "auto"</code> is set, so async tests need no
+         decorator.</p>
+    </section>
+
+    <section id="gotchas">
+      <h2>Gotchas &amp; FAQ</h2>
+      <h4>Why does my prompt text appear in the output?</h4>
+      <p>The <code>&lt;prompt&gt;</code> block itself is never rendered, but its
+         <code>&lt;response&gt;</code> is — and the <code>MockLLMClient</code> <em>echoes the
+         prompt</em> as its answer. With a real provider (or a scripted
+         <code>responder</code>) you'll see the model's output instead.</p>
+
+      <h4>Can two <code>&lt;response&gt;</code> elements share an id?</h4>
+      <p>Yes — rendering the same response in two places is supported and simply emits the same
+         text twice. (Duplicate <em>prompt</em> ids, however, are rejected.)</p>
+
+      <h4>What happens to a skipped prompt's response?</h4>
+      <p>It resolves to an empty string, so its <code>&lt;response&gt;</code> and any
+         <code>&lt;include response&gt;</code> of it render as empty.</p>
+
+      <h4>Is output escaped?</h4>
+      <p>Values emitted by <code>&lt;fill&gt;</code>/<code>&lt;param&gt;</code> in the document
+         are HTML-escaped. Model responses inserted at <code>&lt;response&gt;</code> are emitted
+         as-is — sanitize upstream if responses may contain untrusted markup.</p>
+
+      <h4>Does HPRC call my tools?</h4>
+      <p>Yes — when a prompt declares tools and the model asks to call one or more, HPRC runs your
+         registered function(s) with the model's arguments and feeds the result(s) back, then
+         renders the model's next response. It's a <em>single iteration</em>, not an open-ended
+         agent framework. (Gemini's isn't implemented yet; OpenAI/Ollama and Anthropic are. A
+         multi-step agent loop is on the roadmap.)</p>
+    </section>
+
+    <div class="callout warn" id="status">
+      <p><strong>Status:</strong> open source (Apache-2.0), early release v0.1.0 (Alpha).
+         Created by Rajesh Ramani.</p>
+    </div>
+
+    <div class="foot">
+      HPRC Framework · SPREP Templates (Simple Prompt Response Embedded Pages) · User Guide ·
+      see also <a href="architecture.html">Architecture &amp; Design</a>.
+    </div>
+  </main>
+</div>
+</body>
+</html>

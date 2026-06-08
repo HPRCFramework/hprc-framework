@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>HPRC — Architecture &amp; Design</title>
+  <link rel="stylesheet" href="assets/hprc-docs.css"/>
+  <style>
+    /* Mermaid diagram container (this page renders diagrams with Mermaid.js) */
+    .diagramwrap { background: var(--bg-alt); border: 1px solid var(--border);
+                   border-radius: 10px; padding: 1.1rem; margin: 1.2rem 0; overflow-x: auto; }
+    .diagramwrap .mermaid { text-align: center; }
+    .figcap { color: var(--muted); font-size: .85rem; margin: .2rem 0 0; text-align: center; }
+  </style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <a class="brand" href="index.html">
+      <span class="logo">HP</span>
+      <span><span class="name">HPRC</span><br/><span class="tag">Architecture</span></span>
+    </a>
+    <div class="nav-group nav-doclinks">
+      <h4>Documentation</h4>
+      <a href="../README.html">README</a>
+      <a href="index.html">Docs Home</a>
+      <a href="user-guide.html">User Guide</a>
+      <a href="architecture.html">Architecture</a>
+      <a href="../sprep/sprep-spec.html">SPREP Spec</a>
+    </div>
+    <div class="nav-group">
+      <h4>On this page</h4>
+      <a href="#bigpicture">1 · The big picture</a>
+      <a href="#owns">2 · Who provides what</a>
+      <a href="#pipeline">3 · Inside one render</a>
+      <a href="#adapters">4 · LLM adapters</a>
+      <a href="#tools">5 · Tools (today &amp; planned)</a>
+      <a href="#principles">6 · Design principles</a>
+      <a href="#modules">7 · Module layout</a>
+      <a href="#example">8 · Worked example</a>
+      <a href="#roadmap">Roadmap</a>
+      <a href="#sourcemap">Source map</a>
+    </div>
+  </aside>
+
+  <main class="content">
+    <p class="eyebrow">Architecture &amp; Design</p>
+    <h1>How HPRC works</h1>
+    <p class="lead">A guided tour of the framework: what you provide, what HPRC does for you,
+       how a page is rendered, and how the pieces fit together.</p>
+
+    <!-- ============================================================ -->
+    <section id="bigpicture">
+      <h2>1 · The big picture</h2>
+      <p>HPRC turns a <strong>SPREP template</strong> — an HTML page with embedded
+         <code>&lt;prompt&gt;</code> and <code>&lt;response&gt;</code> elements — into finished
+         HTML, running the prompts through a language model along the way. There are two roles:</p>
+      <ul>
+        <li><strong>You (the application):</strong> write the template, supply your data and a
+            little configuration, and call the renderer.</li>
+        <li><strong>HPRC (the framework):</strong> does all the orchestration — resolving data,
+            deciding which prompts run and in what order, calling the model, caching, and
+            assembling the final HTML.</li>
+      </ul>
+      <div class="diagramwrap">
+        <pre class="mermaid">
+flowchart TB
+    subgraph YOU["YOU PROVIDE"]
+        direction LR
+        T["SPREP template<br/>(.sprep.html)"]
+        D["bindings<br/>(your business data)"]
+        Q["web request<br/>(query / path / method)"]
+        C["HPRCConfig<br/>llm_client · rules · tools · cache"]
+    end
+    T --> R
+    D --> R
+    Q --> R
+    C --> R
+    R["HPRC Renderer<br/>(the framework — orchestrates everything)"]
+    R -- "call: prompt, model, tools" --> M["language model<br/>(via an adapter)"]
+    M -- "answer: text" --> R
+    R --> OUT["Final HTML"]
+    classDef out fill:#cdebc5,stroke:#2e7d32,color:#000;
+    class OUT out;
+        </pre>
+        <p class="figcap">You supply data + a template + config; HPRC drives the model and returns HTML.</p>
+      </div>
+      <p>The key inversion: instead of writing Python that builds prompt strings and splices
+         model output into a page, you put the prompts <em>in the page</em> and let HPRC run them.
+         The <code>&lt;prompt&gt;</code> blocks are <strong>tacit</strong> — they execute but never
+         appear in the output; only their <code>&lt;response&gt;</code> answers do.</p>
+    </section>
+
+    <!-- ============================================================ -->
+    <section id="owns">
+      <h2>2 · Who provides what</h2>
+      <p>You provide a handful of clearly-separated things; HPRC handles the rest. The most
+         important one for newcomers is <code>bindings</code> — the plain dictionary of your own
+         data that becomes available to both the page and the prompts.</p>
+      <table>
+        <thead><tr><th>Piece</th><th>Who provides it</th><th>What it is / what it's for</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>SPREP template</strong><br/>(<code>.sprep.html</code>)</td>
+            <td>You (the page author)</td>
+            <td>The HTML page with <code>&lt;prompt&gt;</code> (what to ask), <code>&lt;response&gt;</code> (where the answer goes), and <code>&lt;fill&gt;</code> (where data goes).</td>
+          </tr>
+          <tr>
+            <td><strong><code>bindings</code></strong><br/>(your data)</td>
+            <td>You (your Python code)</td>
+            <td>A plain dictionary your business logic produces — e.g. <code>{"customer": {"age": 55}}</code>. Read in both the HTML and the prompts via <code>&lt;fill&gt;customer.age&lt;/fill&gt;</code>. This is how your own data gets into a page.</td>
+          </tr>
+          <tr>
+            <td><strong>The web request</strong></td>
+            <td>Your web framework</td>
+            <td>The incoming request (query string, path params, method). HPRC normalizes it into a <code>request.*</code> namespace, read via <code>&lt;fill&gt;request.query.product&lt;/fill&gt;</code> or the shortcut <code>&lt;param&gt;product&lt;/param&gt;</code>.</td>
+          </tr>
+          <tr>
+            <td><strong>Model &amp; settings</strong></td>
+            <td>You (in the template)</td>
+            <td>Per prompt: <code>model</code>, <code>temperature</code>, <code>max_tokens</code> — written as attributes on each <code>&lt;prompt&gt;</code>.</td>
+          </tr>
+          <tr>
+            <td><strong>Rules</strong><br/>(who gets what)</td>
+            <td>You (Python functions)</td>
+            <td>Named yes/no functions registered in <code>HPRCConfig.rules</code>. A prompt references one by name in <code>condition="is_premium_customer"</code> to decide whether it runs. The logic lives in Python, not the template.</td>
+          </tr>
+          <tr>
+            <td><strong>Tools</strong><br/>(extra abilities)</td>
+            <td>You (Python functions)</td>
+            <td>Named callables registered in <code>HPRCConfig.tools</code>. A prompt lists the ones it's allowed to use in <code>tools="crm_lookup"</code>; HPRC passes those to the model.</td>
+          </tr>
+          <tr>
+            <td><strong>LLM client</strong><br/>(the model adapter)</td>
+            <td>You (in <code>HPRCConfig</code>)</td>
+            <td>The object that actually talks to a model provider. HPRC ships ready-made ones (OpenAI, Claude, Gemini, local, mock) — see <a href="#adapters">§4</a>.</td>
+          </tr>
+          <tr>
+            <td><strong>Cache</strong></td>
+            <td>You (in <code>HPRCConfig</code>)</td>
+            <td>Where prompt responses are stored to avoid repeat model calls. Defaults to an in-memory cache; pluggable (e.g. Redis).</td>
+          </tr>
+          <tr>
+            <td><strong>Everything else</strong></td>
+            <td><strong>HPRC</strong></td>
+            <td>Parsing, deciding which prompts run, working out their order, running them, caching, and assembling the final HTML — you don't write any of this.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ============================================================ -->
+    <section id="pipeline">
+      <h2>3 · Inside one render (the internal mechanism)</h2>
+      <div class="callout">
+        <p><strong>You don't call these steps.</strong> You call one function —
+           <code>render_template(...)</code> — and HPRC runs the pipeline below internally. It's
+           documented here so you understand <em>how</em> a page is produced, not because you
+           invoke any of it directly.</p>
+      </div>
+      <div class="diagramwrap">
+        <pre class="mermaid">
+flowchart TD
+    P["1 · Parse the template<br/>(find prompts, responses, fills)"] --> N["2 · Normalize the request<br/>request.query / path / method"]
+    N --> E["3 · Evaluate rules<br/>skip prompts whose condition is false"]
+    E --> G["4 · Build a dependency graph<br/>which prompts feed which (via include)"]
+    G --> O["5 · Order into levels<br/>independent prompts can share a level"]
+    O --> X["6 · Run each prompt<br/>resolve data, check cache, call model"]
+    X --> S["7 · Serialize<br/>insert responses, drop prompts, final HTML"]
+        </pre>
+        <p class="figcap">One render pass, start to finish. Steps 4–6 are what remove the need for hand-written orchestration.</p>
+      </div>
+      <ol>
+        <li><strong>Parse</strong> — read the template into a tree and find every
+            <code>&lt;prompt&gt;</code> and <code>&lt;response&gt;</code>. Ordinary HTML is kept as-is.</li>
+        <li><strong>Normalize the request</strong> — turn whatever request object your web
+            framework passed (or a plain dict) into a uniform <code>request.*</code> namespace.</li>
+        <li><strong>Evaluate rules</strong> — for each prompt that has a <code>condition</code>,
+            run the named Python rule. If it returns false, that prompt is skipped entirely.</li>
+        <li><strong>Build a dependency graph</strong> — a prompt that pulls in another's answer
+            (<code>&lt;include response="X"/&gt;</code>) depends on it. HPRC discovers these links
+            automatically; you never sequence prompts by hand.</li>
+        <li><strong>Order into levels</strong> — group prompts so that everything in a level is
+            independent. Levels run in order; a cycle is reported as an error.</li>
+        <li><strong>Run each prompt</strong> — fill in its data (<code>&lt;fill&gt;</code>,
+            <code>&lt;param&gt;</code>, <code>&lt;include&gt;</code>), look in the cache, and if
+            needed call the model through the adapter. Prompts are sequential by default;
+            <code>async="yes"</code> opts them into concurrency within a level.</li>
+        <li><strong>Serialize</strong> — walk the page and emit the final HTML: drop the
+            <code>&lt;prompt&gt;</code> blocks, insert each answer at its <code>&lt;response&gt;</code>,
+            and fill remaining <code>&lt;fill&gt;</code>/<code>&lt;param&gt;</code> values (HTML-escaped).</li>
+      </ol>
+      <p>The renderer (<code>hprc/renderer.py</code>) coordinates all of this; everything passing
+         through it is plain data described in <code>hprc/models.py</code>.</p>
+    </section>
+
+    <!-- ============================================================ -->
+    <section id="adapters">
+      <h2>4 · LLM adapters (works with any provider)</h2>
+      <p>HPRC never hard-codes a model vendor. Every provider is reached through one small
+         interface — <code>LLMClient</code> — with a single method, <code>generate(...)</code>.
+         The renderer only ever calls that method, so it doesn't know or care which provider is
+         behind it.</p>
+      <p><strong>Ready-made adapters ship for the common providers; you can write your own for
+         anything else.</strong></p>
+      <div class="diagramwrap">
+        <pre class="mermaid">
+flowchart TB
+    R["Renderer"] -->|"generate(prompt, model, temperature, tools)"| I{{"LLMClient<br/>(one interface)"}}
+    I --> O["OpenAIClient"]
+    I --> A["AnthropicClient<br/>(Claude)"]
+    I --> G["GeminiClient"]
+    I --> L["OllamaClient<br/>(local / LM Studio)"]
+    I --> K["MockLLMClient<br/>(offline, for tests)"]
+    I --> Y["YourClient<br/>(write a ~30-line adapter)"]
+        </pre>
+        <p class="figcap">Each box is one self-contained adapter. The renderer talks only to the interface.</p>
+      </div>
+      <table>
+        <thead><tr><th>Adapter (shipped)</th><th>Talks to</th><th>Install extra</th></tr></thead>
+        <tbody>
+          <tr><td><code>OpenAIClient</code></td><td>OpenAI (GPT models)</td><td><code>pip install "hprc-framework[openai]"</code></td></tr>
+          <tr><td><code>AnthropicClient</code></td><td>Anthropic (Claude)</td><td><code>…[anthropic]</code></td></tr>
+          <tr><td><code>GeminiClient</code></td><td>Google (Gemini)</td><td><code>…[gemini]</code></td></tr>
+          <tr><td><code>OllamaClient</code></td><td>local models (Ollama / LM Studio)</td><td>— (OpenAI-compatible)</td></tr>
+          <tr><td><code>MockLLMClient</code></td><td>nothing — deterministic offline echo</td><td>— (built in)</td></tr>
+          <tr><td><code>MultiProviderClient</code></td><td>routes to several of the above by a <code>"provider:model"</code> prefix</td><td>—</td></tr>
+        </tbody>
+      </table>
+      <p>You pick one when you build the config — that fixes the provider; a prompt's
+         <code>model="…"</code> then selects the specific model within it:</p>
+      <div class="code-card"><div class="code-head"><span>choose a provider</span><span class="lang">python</span></div>
+<pre><code>from hprc import HPRCConfig, OpenAIClient, AnthropicClient, GeminiClient
+
+HPRCConfig(llm_client=OpenAIClient(api_key=...))      # GPT
+HPRCConfig(llm_client=AnthropicClient(api_key=...))   # Claude
+HPRCConfig(llm_client=GeminiClient(api_key=...))      # Gemini</code></pre></div>
+
+      <h3>Writing an adapter for another provider</h3>
+      <p>Subclass <code>LLMClient</code> and implement one method: take HPRC's standard inputs,
+         call the vendor's API, return the text. Lazy-import the SDK so HPRC keeps no hard
+         dependency on it. Nothing else in HPRC changes.</p>
+      <div class="code-card"><div class="code-head"><span>my_provider.py</span><span class="lang">python</span></div>
+<pre><code>from hprc import LLMClient
+
+class MyProviderClient(LLMClient):
+    def __init__(self, api_key, default_model="my-model-1"):
+        self._api_key, self._default, self._client = api_key, default_model, None
+
+    def _get_client(self):
+        if self._client is None:
+            from myprovider import AsyncClient   # imported only when used
+            self._client = AsyncClient(api_key=self._api_key)
+        return self._client
+
+    async def generate(self, prompt, model=None, temperature=None,
+                       max_tokens=None, tools=None) -&gt; str:
+        resp = await self._get_client().complete(
+            model=model or self._default, input=prompt,
+            temperature=temperature, max_tokens=max_tokens,
+        )
+        return resp.text            # return the model's text
+
+# then:  HPRCConfig(llm_client=MyProviderClient(api_key=...))</code></pre></div>
+      <p>The contract every adapter must satisfy (request mapping + text extraction) is exercised
+         by <code>tests/test_providers.py</code> against fake SDKs — copy a case for your adapter.</p>
+    </section>
+
+    <!-- ============================================================ -->
+    <section id="tools">
+      <h2>5 · Tools — the model can call your functions</h2>
+      <p>Tools let a prompt give the model abilities it can <em>call</em> while the page renders —
+         look something up, run a calculation, hit an API. The current architecture supports a
+         <strong>single tool iteration</strong>: the model may request one or more tool calls,
+         HPRC executes them and feeds the results back, and the model's next response is rendered.
+         (A multi-step / agent loop is on the roadmap.)</p>
+
+      <h3>How you wire tools</h3>
+      <p>Register the actual functions by name in your config, and list which ones a prompt may use:</p>
+      <div class="code-card"><div class="code-head"><span>python + template</span><span class="lang">python</span></div>
+<pre><code>def crm_lookup(customer_id: str) -&gt; str:            # a normal Python function
+    return "no open tickets, renewed last month"
+
+config = HPRCConfig(tools={"crm_lookup": crm_lookup})   # name -&gt; function
+
+# in the template, a prompt allow-lists the tools it may call:
+#   &lt;prompt id="summary" tools="crm_lookup"&gt; … &lt;/prompt&gt;</code></pre></div>
+
+      <h3>How the loop runs (during the render)</h3>
+      <p>When a prompt declares tools, HPRC calls the model with the prompt + the tool schemas
+         (each adapter maps them to that vendor's format). Then:</p>
+      <div class="diagramwrap">
+        <pre class="mermaid">
+sequenceDiagram
+    autonumber
+    participant R as HPRC (during render)
+    participant LLM as language model
+    participant Fn as your registered tool fn
+    R->>LLM: prompt + available tools
+    LLM-->>R: please call crm_lookup with customer_id 1001
+    R->>Fn: crm_lookup(customer_id=1001)
+    Fn-->>R: no open tickets, renewed last month
+    R->>LLM: here is the tool result, continue
+    LLM-->>R: final text answer
+    Note over R: one iteration — execute the tool call(s), feed back, render the next turn
+        </pre>
+        <p class="figcap">HPRC executes the tool with the model's arguments and feeds the result back, then renders the model's final text.</p>
+      </div>
+      <ul>
+        <li><strong>If the model just answers</strong> (no tool call), that text is the response — one model call, done.</li>
+        <li><strong>If the model calls one or more tools</strong>, HPRC runs your registered function(s) with the <em>arguments the model supplied</em>, returns the result(s), and asks the model once more — that next response is the answer. This is a <strong>single iteration</strong> of tool execution.</li>
+        <li><strong>If the model is still calling a tool after that iteration</strong>, HPRC renders <strong>nothing</strong> for that prompt (an empty response) rather than show a half-finished turn.</li>
+      </ul>
+
+      <h3>Details worth knowing</h3>
+      <ul>
+        <li><strong>Allow-list enforced:</strong> a prompt can only call the tools it lists. If the model asks for one that isn't allowed, HPRC returns an error string to the model (it can recover) rather than execute it.</li>
+        <li><strong>No caching:</strong> tool-executing prompts are not cached, since tool outputs are dynamic.</li>
+        <li><strong>Provider support:</strong> implemented for <code>OpenAIClient</code> (and <code>OllamaClient</code>) and <code>AnthropicClient</code>. <code>GeminiClient</code> forwards tool schemas but its execution loop isn't implemented yet (it falls back to a single text generation).</li>
+        <li><strong>Single iteration, not an agent:</strong> HPRC runs exactly one round of tool execution per prompt — it does not keep looping. A multi-step agent loop and MCP support are on the roadmap.</li>
+      </ul>
+
+      <div class="callout">
+        <p><strong>Why bounded — render-time vs. live.</strong> HPRC's renderer is
+           <em>synchronous</em>: a request comes in, the page is produced, and the HTML is
+           returned. That render must terminate quickly and predictably — you can't return a page
+           while a loop is still running, and an unbounded agent in the render path would blow up
+           latency, timeouts, and server load. So the render path stays bounded (fills, prompts, a
+           single tool iteration). Anything <em>long-running</em> — a widget that keeps making
+           model/tool calls in real time — belongs to a <strong>separate execution model</strong>
+           (a "live region" streamed over SSE/WebSocket after the page is sent), not the renderer.
+           Those future tracks — a bounded multi-step agent loop, live/streaming regions, and
+           progressive render — are recorded in the project roadmap.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section id="principles">
+      <h2>6 · Design principles (and why they matter)</h2>
+
+      <h3>No code or expressions in templates</h3>
+      <p>A SPREP template can't contain logic — there are no <code>if</code> statements, no
+         expressions, no function calls. When the page needs a decision ("only run this prompt
+         for premium customers"), the template just <em>names</em> a rule
+         (<code>condition="is_premium_customer"</code>) and you define that rule as a Python
+         function. Tools work the same way: the template lists allowed <em>names</em>; the actual
+         functions live in your app. <strong>Why:</strong> templates stay simple and safe to read
+         or hand to a designer, and your business logic stays in Python where it can be tested.</p>
+
+      <h3>A single tool iteration, not an agent</h3>
+      <p>When a prompt lists tools, HPRC executes the ones the model calls in <em>one</em>
+         iteration, feeds the results back, and renders the model's next response — it does not
+         keep looping (see <a href="#tools">§5</a>). It is not an autonomous agent.
+         <strong>Why:</strong> every render terminates predictably and you stay in control. A
+         multi-step agent loop and MCP are on the roadmap.</p>
+
+      <h3>Layered code with no cycles</h3>
+      <p>The library is organized in layers that only depend downward, so there are no circular
+         dependencies. At the bottom are plain data structures (<code>models.py</code>). Small,
+         independent services sit on top — the parser, cache, rules, tools, and the provider
+         adapters — and each depends only on those data structures, not on each other. The
+         <strong>renderer is the single coordinator</strong> that ties them together.
+         <strong>Why:</strong> every piece is easy to understand, test, and swap out on its own
+         (you can replace the cache or add a provider without touching the renderer).</p>
+    </section>
+
+    <!-- ============================================================ -->
+    <section id="modules">
+      <h2>7 · Module layout</h2>
+      <p>Arrows point from a module to what it depends on. Notice that everything ultimately
+         rests on the data models, and only the renderer wires the services together.</p>
+      <div class="diagramwrap">
+        <pre class="mermaid">
+flowchart TD
+    INIT["__init__.py<br/>(public API)"] --> REN
+    REN["renderer.py<br/>orchestrator"] --> CFG["config.py<br/>HPRCConfig"]
+    REN --> PAR["parser.py"]
+    REN --> DG["dependency_graph.py"]
+    REN --> RUL["rules.py"]
+    REN --> RC["request_context.py"]
+    REN --> TLS["tools.py"]
+    REN --> CA["cache.py"]
+    CFG --> LLM["llm.py<br/>(adapters)"]
+    CFG --> CA
+    CFG --> TLS
+    PAR --> MOD["models.py<br/>(pure data)"]
+    DG --> MOD
+    LLM --> MOD
+    TLS --> MOD
+    CA --> MOD
+    RC --> MOD
+        </pre>
+        <p class="figcap">Data models at the base · leaf services in the middle · the renderer on top.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section id="example">
+      <h2>8 · Worked example — two dependent prompts</h2>
+      <p>A customer page that (1) summarizes the account, but only for premium customers, and
+         (2) suggests an upsell <em>based on that summary</em>. The second prompt includes the
+         first's answer, so HPRC runs them in order automatically.</p>
+      <div class="code-card"><div class="code-head"><span>customer.sprep.html (excerpt)</span><span class="lang">html</span></div>
+<pre><code>&lt;prompt id="summary" model="gpt-4o" condition="is_premium_customer"
+        cache="24h" tools="crm_lookup"&gt;
+  You are a concise account analyst. In two sentences, summarize this customer's
+  account and flag anything notable.
+  Name: &lt;fill&gt;customer.name&lt;/fill&gt; · Tier: &lt;fill&gt;customer.tier&lt;/fill&gt;
+  Balance: &lt;fill&gt;account.balance&lt;/fill&gt; · Last order: &lt;fill&gt;account.last_order&lt;/fill&gt;
+&lt;/prompt&gt;
+
+&lt;prompt id="upsell" model="gpt-4o"&gt;
+  Based on this account summary:
+  &lt;include response="summary"/&gt;
+  Recommend exactly one upsell relevant to "&lt;param&gt;product&lt;/param&gt;", in one sentence.
+&lt;/prompt&gt;
+
+&lt;section&gt;&lt;h2&gt;Account summary&lt;/h2&gt;&lt;response id="summary"/&gt;&lt;/section&gt;
+&lt;section&gt;&lt;h2&gt;Suggested next step&lt;/h2&gt;&lt;response id="upsell"/&gt;&lt;/section&gt;</code></pre></div>
+      <p>Dependency graph: <code>summary</code> → <code>upsell</code>. (If the model decides to call
+         <code>crm_lookup</code>, HPRC executes it and feeds the result back before producing the
+         summary — see <a href="#tools">§5</a>.) Here is what happens at render time:</p>
+      <div class="diagramwrap">
+        <pre class="mermaid">
+sequenceDiagram
+    autonumber
+    participant App as Your app
+    participant R as HPRC Renderer
+    participant Rule as is_premium_customer
+    participant LLM as LLM adapter
+    App->>R: render_template(template, bindings, request, config)
+    R->>Rule: does this customer qualify?
+    Rule-->>R: yes → run "summary"
+    Note over R: order = summary, then upsell (upsell includes summary)
+    R->>LLM: generate(summary prompt, model=gpt-4o, tools=[crm_lookup])
+    LLM-->>R: "Premium account in good standing; large order last week."
+    R->>LLM: generate(upsell prompt, with the summary text embedded)
+    LLM-->>R: "Suggest the Pro plan to match their growing usage."
+    R-->>App: final HTML — prompts removed, both answers inserted
+        </pre>
+        <p class="figcap">HPRC discovered the order from the include — you never sequenced the calls.</p>
+      </div>
+      <p>Had a third, independent prompt been present, it could share <code>summary</code>'s level
+         and (with <code>async="yes"</code>) run at the same time.</p>
+    </section>
+
+    <!-- ============================================================ -->
+    <section id="roadmap">
+      <h2>Roadmap</h2>
+      <p>The render path stays <strong>synchronous and bounded</strong>; these are the planned
+         additions, grouped by theme. <em>Recently shipped:</em> provider adapters, single-iteration
+         tool execution, response gathering, and the <code>context → bindings</code> rename.</p>
+      <h3>Tooling &amp; MCP</h3>
+      <ul>
+        <li>A <strong>multi-step (bounded) agent loop</strong> — beyond today's single tool iteration.</li>
+        <li><strong>MCP</strong> (Model Context Protocol) integration — discover &amp; execute MCP tools via the same allow-list.</li>
+        <li>Gemini tool execution; tool results as embeddable content.</li>
+      </ul>
+      <h3>Conversational / multi-turn <span class="pill gray">app owns persistence</span></h3>
+      <ul>
+        <li><strong><code>prior_context</code></strong> — pass in an existing message chain (roles preserved).</li>
+        <li><strong><code>&lt;system&gt;</code> role</strong> — a system-message directive prepended to prompt calls.</li>
+        <li><strong><code>RenderResult.messages</code></strong> — return the turns so the app can persist history and replay it. HPRC itself stays stateless.</li>
+      </ul>
+      <h3>Response shaping</h3>
+      <ul>
+        <li><strong>Structured output → fills</strong> — a prompt returns JSON whose fields fill many placeholders (<code>&lt;fill&gt;card.title&lt;/fill&gt;</code>); the template owns layout, values stay escaped.</li>
+        <li><strong><code>format</code> attribute</strong> — <code>text</code> (safe default), <code>markdown</code> (→ sanitized HTML), <code>html</code> (sanitized, opt-in).</li>
+        <li><strong><code>&lt;each&gt;</code></strong> — iteration for rendering lists.</li>
+      </ul>
+      <h3>Data composition</h3>
+      <ul>
+        <li>Raw/trusted HTML injection (<code>&lt;fill raw&gt;</code> + sanitizer).</li>
+        <li><strong>Async data providers</strong> in the dependency graph (DB/API fetches running alongside prompts).</li>
+        <li><strong><code>retrieved_context</code></strong> (RAG) + a retriever seam.</li>
+      </ul>
+      <h3>Execution models — render-time vs. live</h3>
+      <ul>
+        <li><strong>Live regions / real-time widgets</strong> — a <em>separate</em> post-render model: the render emits a placeholder + client hook, and a companion endpoint runs the loop and streams updates (SSE/WebSocket). See the §5 callout for why this stays off the render path.</li>
+        <li><strong>Progressive / streaming render</strong> — flush each <code>&lt;response&gt;</code> as it completes.</li>
+      </ul>
+      <div class="callout">
+        <p><strong>Naming taxonomy (adopted):</strong> <code>bindings</code> = page data ·
+           <code>prior_context</code> = conversation · <code>retrieved_context</code> = RAG ·
+           <code>request</code> = the web request. Principle: <em><code>*_context</code> feeds the
+           model's context window; <code>bindings</code> is page data.</em></p>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section id="sourcemap">
+      <h2>Source map</h2>
+      <table>
+        <thead><tr><th>File</th><th>Responsibility</th></tr></thead>
+        <tbody>
+          <tr><td><code>hprc/models.py</code></td><td>Plain data structures (parsed template, prompt/response definitions, render bindings).</td></tr>
+          <tr><td><code>hprc/parser.py</code></td><td>Turn template text into that data; find prompts/responses; validate.</td></tr>
+          <tr><td><code>hprc/request_context.py</code></td><td>Normalize the web request; resolve dotted paths like <code>customer.age</code>.</td></tr>
+          <tr><td><code>hprc/rules.py</code></td><td>Look up and run named rules (no expressions in templates).</td></tr>
+          <tr><td><code>hprc/dependency_graph.py</code></td><td>Find <code>include</code> links, build the graph, order into levels.</td></tr>
+          <tr><td><code>hprc/tools.py</code></td><td>Resolve allow-listed tool names to registered functions.</td></tr>
+          <tr><td><code>hprc/cache.py</code></td><td>TTL parsing, cache keys, in-memory cache (pluggable).</td></tr>
+          <tr><td><code>hprc/llm.py</code></td><td>The <code>LLMClient</code> interface and the shipped adapters.</td></tr>
+          <tr><td><code>hprc/config.py</code></td><td><code>HPRCConfig</code> — bundles client, rules, tools, cache.</td></tr>
+          <tr><td><code>hprc/renderer.py</code></td><td>The orchestrator + the public <code>render_*</code> entry points.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <div class="foot">
+      HPRC Framework · PREP Templates (Simple Prompt Response Embedded Pages) · Architecture &amp; Design ·
+      see also the <a href="user-guide.html">User Guide</a>.
+    </div>
+  </main>
+</div>
+
+<!-- Diagrams are drawn with Mermaid (loaded from a CDN). -->
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+  if (window.mermaid) {
+    mermaid.initialize({ startOnLoad: true, theme: 'neutral', securityLevel: 'loose',
+                         flowchart: { useMaxWidth: true } });
+  }
+</script>
+</body>
+</html>

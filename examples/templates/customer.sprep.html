@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Customer — <fill>customer.name</fill></title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 720px; margin: 2rem auto; }
+    .card { border: 1px solid #ddd; border-radius: 8px; padding: 1rem 1.25rem; margin: 1rem 0; }
+    .muted { color: #777; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <h1><fill>customer.name</fill></h1>
+  <p class="muted">
+    Tier: <fill>customer.tier</fill>
+    &middot; Account #<fill>request.path.customer_id</fill>
+    &middot; Viewing product: <param>product</param>
+  </p>
+
+  <!--
+    PROMPT 1 — account summary.
+    Only runs for premium customers (named rule, evaluated in Python).
+    Tacit: this block never appears in the final HTML.
+  -->
+  <prompt
+      id="summary"
+      model="gpt-5"
+      condition="is_premium_customer"
+      temperature="0.2"
+      max_tokens="500"
+      cache="24h"
+      tools="crm_lookup,pricing_engine">
+    You are a concise account analyst.
+
+    Customer: <fill>customer.name</fill> (tier: <fill>customer.tier</fill>)
+    Balance: <fill>account.balance</fill>
+    Product of interest: <param>product</param>
+
+    Write a 2-sentence summary of this account.
+  </prompt>
+
+  <!--
+    PROMPT 2 — upsell suggestion. Depends on PROMPT 1 via <include response>.
+    SPREP builds the dependency graph automatically: "summary" runs first.
+  -->
+  <prompt id="upsell" model="gpt-5" temperature="0.4">
+    Given this account summary:
+    <include response="summary"/>
+
+    Suggest exactly one relevant upsell for "<param>product</param>".
+  </prompt>
+
+  <div class="card">
+    <h2>Account Summary</h2>
+    <response id="summary" render="yes"></response>
+  </div>
+
+  <div class="card">
+    <h2>Recommended Next Step</h2>
+    <response id="upsell" render="yes"></response>
+  </div>
+</body>
+</html>

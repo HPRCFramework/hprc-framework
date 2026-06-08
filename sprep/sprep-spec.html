@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>SPREP — Template Language Specification</title>
+  <link rel="stylesheet" href="../docs/assets/hprc-docs.css"/>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <a class="brand" href="../docs/index.html">
+      <span class="logo">SP</span>
+      <span><span class="name">SPREP</span><br/><span class="tag">Language Spec</span></span>
+    </a>
+    <div class="nav-group nav-doclinks">
+      <h4>Documentation</h4>
+      <a href="../docs/index.html">HPRC Home</a>
+      <a href="../docs/user-guide.html">User Guide</a>
+      <a href="../docs/architecture.html">Architecture</a>
+      <a href="sprep-spec.html">SPREP Spec</a>
+    </div>
+    <div class="nav-group">
+      <h4>Specification</h4>
+      <a href="#overview">1 · Overview</a>
+      <a href="#fileformat">2 · File format</a>
+      <a href="#namespaces">3 · Namespaces</a>
+      <a href="#elements">4 · Elements</a>
+      <a href="#semantics">5 · Execution semantics</a>
+      <a href="#contracts">6 · External contracts</a>
+      <a href="#safety">7 · Escaping &amp; safety</a>
+      <a href="#conformance">8 · Conformance</a>
+      <a href="#refimpl">9 · Reference impl</a>
+      <a href="#future">10 · Future extensions</a>
+      <a href="#example">Appendix · Example</a>
+    </div>
+  </aside>
+
+  <main class="content">
+    <p class="eyebrow">Template Language Specification · v0.1 (Draft)</p>
+    <h1>SPREP — Simple Prompt Response Embedded Pages</h1>
+    <p class="lead">A declarative, server-side template language for embedding LLM prompts
+       directly inside HTML. Reference implementation: the HPRC Framework.</p>
+
+    <span class="pill">v0.1 Draft</span>
+    <span class="pill teal">.sprep.html</span>
+    <span class="pill gray">Apache-2.0</span>
+    <span class="pill gray">© 2026 Rajesh Ramani</span>
+
+    <section id="overview">
+      <h2>1 · Overview</h2>
+      <p><strong>SPREP</strong> (Simple Prompt Response Embedded Pages) is a declarative
+         <strong>template language</strong> for embedding generative-model (LLM) prompts
+         directly inside HTML. A SPREP template is ordinary HTML augmented with a small set
+         of elements that declare prompts, mark where their responses appear, bind data into
+         them, and compose them together.</p>
+      <p>SPREP templates are executed by a <strong>conforming renderer</strong> during page
+         rendering. The reference renderer is the <strong>HPRC Framework</strong> (HTML Prompt
+         Response Construction).</p>
+      <div class="callout">
+        <p>Developers write <strong>SPREP templates</strong>. A renderer such as the
+           <strong>HPRC Framework</strong> renders them.</p>
+      </div>
+      <h3>Design tenets</h3>
+      <ul>
+        <li><strong>Declarative templates</strong> — say <em>what</em> to ask and <em>where</em> the answer goes; never business logic.</li>
+        <li><strong>Prompts are tacit</strong> — a <code>&lt;prompt&gt;</code> is executable but never emitted into output.</li>
+        <li><strong>Logic is external</strong> — conditions reference <em>named rules</em>; predicates live in host code.</li>
+        <li><strong>Capabilities are external</strong> — tools are referenced by <em>name</em> from an allowlist.</li>
+        <li><strong>Provider-independent</strong> — the language says nothing about the model vendor.</li>
+        <li><strong>Composable</strong> — one prompt may include another's response or text; the renderer orders execution automatically.</li>
+      </ul>
+    </section>
+
+    <section id="fileformat">
+      <h2>2 · File format</h2>
+      <ul>
+        <li><strong>Syntax base:</strong> an HTML superset. Non-SPREP markup is preserved verbatim in output.</li>
+        <li><strong>Conventional extension:</strong> <code>.sprep.html</code></li>
+        <li><strong>Encoding:</strong> UTF-8.</li>
+        <li><strong>Media type (suggested):</strong> <code>text/html</code> (tooling MAY use <code>application/sprep+html</code>).</li>
+      </ul>
+    </section>
+
+    <section id="namespaces">
+      <h2>3 · Namespaces &amp; value resolution</h2>
+      <p><code>&lt;fill&gt;</code> and <code>&lt;param&gt;</code> resolve <strong>dotted paths</strong>
+         against a root namespace:</p>
+      <table>
+        <thead><tr><th>Namespace</th><th>Source</th></tr></thead>
+        <tbody>
+          <tr><td>application bindings</td><td>host-supplied data (mapping/object)</td></tr>
+          <tr><td><code>request.query.*</code></td><td>request query-string parameters</td></tr>
+          <tr><td><code>request.path.*</code></td><td>request path parameters</td></tr>
+          <tr><td><code>request.method</code></td><td>the HTTP method (empty for non-HTTP)</td></tr>
+        </tbody>
+      </table>
+      <p>Path segments traverse mappings, object attributes and integer sequence indices. A
+         missing path resolves to the <strong>empty string</strong>.</p>
+    </section>
+
+    <section id="elements">
+      <h2>4 · Elements</h2>
+      <p>SPREP defines five elements; all other markup is literal HTML.</p>
+
+      <h3 id="el-prompt">4.1 <code>&lt;prompt&gt;</code> — executable, tacit</h3>
+      <p>Declares a model call. Its body becomes the prompt text. <strong>It is never rendered.</strong></p>
+      <table>
+        <thead><tr><th>Attribute</th><th>Type</th><th>Default</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>id</code></td><td>string</td><td><strong>required</strong></td><td>Unique; binds to <code>&lt;response&gt;</code> and <code>&lt;include&gt;</code>.</td></tr>
+          <tr><td><code>model</code></td><td>string</td><td>renderer default</td><td>Model identifier passed to the provider.</td></tr>
+          <tr><td><code>condition</code></td><td>rule name</td><td>none</td><td>Named rule gating execution; absent ⇒ always runs.</td></tr>
+          <tr><td><code>temperature</code></td><td>number</td><td>provider default</td><td>Generation parameter.</td></tr>
+          <tr><td><code>max_tokens</code></td><td>integer</td><td>provider default</td><td>Output token cap.</td></tr>
+          <tr><td><code>async</code></td><td><code>yes</code>|<code>no</code></td><td><code>no</code></td><td>Prompts run sequentially by default; <code>yes</code> opts this prompt into concurrent execution with other async prompts in its level.</td></tr>
+          <tr><td><code>cache</code></td><td>duration</td><td>none</td><td>TTL e.g. <code>24h</code>; absent/<code>0</code> ⇒ no caching.</td></tr>
+          <tr><td><code>tools</code></td><td>name list</td><td>none</td><td>Comma-separated allowlist of tool names.</td></tr>
+        </tbody>
+      </table>
+      <p>Body may contain text and the directives <code>&lt;fill&gt;</code>,
+         <code>&lt;param&gt;</code>, <code>&lt;include&gt;</code>.</p>
+
+      <h3 id="el-response">4.2 <code>&lt;response&gt;</code> — placeholder</h3>
+      <p>Marks where a prompt's output is inserted, bound by <code>id</code>.</p>
+      <table>
+        <thead><tr><th>Attribute</th><th>Type</th><th>Default</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>id</code></td><td>string</td><td><strong>required</strong></td><td>Must match a <code>&lt;prompt id="…"&gt;</code>.</td></tr>
+          <tr><td><code>render</code></td><td><code>yes</code>|<code>no</code></td><td><code>yes</code></td><td><code>no</code> ⇒ generated but hidden (still available to <code>&lt;include response&gt;</code>).</td></tr>
+        </tbody>
+      </table>
+      <p>Multiple <code>&lt;response&gt;</code> elements MAY share an <code>id</code> (same output rendered in each place).</p>
+
+      <h3 id="el-fill">4.3 <code>&lt;fill&gt;</code> — data binding</h3>
+      <div class="code-card"><div class="code-head"><span>html</span><span class="lang">html</span></div>
+<pre><code>&lt;fill&gt;customer.profile.name&lt;/fill&gt;</code></pre></div>
+      <p>Resolves a dotted path. <strong>HTML-escaped</strong> in document output; inserted
+         <strong>raw</strong> inside a prompt body (it is text for the model).</p>
+
+      <h3 id="el-param">4.4 <code>&lt;param&gt;</code> — request-query shortcut</h3>
+      <div class="code-card"><div class="code-head"><span>html</span><span class="lang">html</span></div>
+<pre><code>&lt;param&gt;product&lt;/param&gt;   &lt;!-- equivalent to: &lt;fill&gt;request.query.product&lt;/fill&gt; --&gt;</code></pre></div>
+
+      <h3 id="el-include">4.5 <code>&lt;include&gt;</code> — composition</h3>
+      <div class="code-card"><div class="code-head"><span>html</span><span class="lang">html</span></div>
+<pre><code>&lt;include prompt="summary"/&gt;     &lt;!-- inserts the CONSTRUCTED PROMPT TEXT of "summary" --&gt;
+&lt;include response="summary"/&gt;   &lt;!-- inserts the GENERATED RESPONSE of "summary" --&gt;</code></pre></div>
+      <p>An <code>&lt;include&gt;</code> creates a <strong>dependency</strong> on the referenced
+         prompt. The target MUST be a defined prompt <code>id</code>; an undefined reference is
+         an <strong>error</strong> (reported at parse time).</p>
+    </section>
+
+    <section id="semantics">
+      <h2>5 · Execution semantics</h2>
+      <p>A conforming renderer performs one render pass:</p>
+      <ol class="steps">
+        <li><strong>Parse</strong> into a node tree; index <code>&lt;prompt&gt;</code>/<code>&lt;response&gt;</code>.</li>
+        <li><strong>Normalize the request</strong> — convert whatever request object the web framework hands over (FastAPI, Flask, Django, or a plain dict) into one uniform <code>request</code> namespace the template can read (<code>request.query.*</code>, <code>request.path.*</code>, <code>request.method</code>). This is what <code>&lt;param&gt;</code> and <code>&lt;fill&gt;request.…&lt;/fill&gt;</code> resolve against.</li>
+        <li><strong>Evaluate conditions</strong> — run each prompt's named <code>condition</code> rule against the bindings; skip the prompt on a false result (response = empty). An <em>unregistered</em> rule name SHOULD be an error; a rule that <em>raises</em> MAY be treated as skip.</li>
+        <li><strong>Build the dependency graph</strong> from <code>&lt;include&gt;</code> references.</li>
+        <li><strong>Order execution</strong> by topological levels; a cycle is an error.</li>
+        <li><strong>Execute</strong> level by level — prompts run sequentially by default; <code>async="yes"</code> runs concurrently with other async prompts in the level (a level may be sequential, concurrent, or a mix). Construct each prompt by resolving fills/params/includes (recursively, memoized).</li>
+        <li><strong>Cache</strong> (if <code>cache</code> set) keyed on resolved prompt text + model + temperature + max_tokens + sorted tools; a hit skips the model.</li>
+        <li><strong>Invoke the model</strong> via a provider-independent client with the resolved tools.</li>
+        <li><strong>Serialize</strong> — produce the final HTML by walking the document and emitting each node: a <code>&lt;prompt&gt;</code> emits <strong>nothing</strong>; a <code>&lt;response id="X"&gt;</code> emits prompt X's generated text (or nothing if <code>render="no"</code>); an <code>&lt;include response="X"&gt;</code> emits X's text; <code>&lt;fill&gt;</code>/<code>&lt;param&gt;</code> emit their resolved value, <strong>HTML-escaped</strong>; all other markup is emitted <strong>unchanged</strong>.</li>
+      </ol>
+    </section>
+
+    <section id="contracts">
+      <h2>6 · External contracts</h2>
+      <ul>
+        <li><strong>Rules</strong> — conditions are <em>named only</em>; <strong>no expression language</strong> in templates. Host supplies <code>{name → predicate(bindings) → bool}</code>.</li>
+        <li><strong>Tools</strong> — templates list an <strong>allowlist of names</strong>; host supplies <code>{name → tool}</code>. The renderer resolves names (rejecting unknown) and exposes the tools to the model. A conforming renderer MAY execute the tool calls the model requests and feed results back; SPREP does not mandate an agent loop. (The reference implementation runs a <strong>single iteration</strong> — it executes the tool call(s), feeds results back, and renders the model's next response, or nothing if still calling tools after that iteration. A multi-step agent loop is on its roadmap.)</li>
+        <li><strong>Cache</strong> — when a prompt sets <code>cache="…"</code>, the renderer <strong>stores that prompt's generated response and reuses it on later renders instead of calling the model again</strong> (saving latency and cost). The duration sets how long the entry stays valid: <code>s</code>/<code>m</code>/<code>h</code>/<code>d</code>/<code>w</code> (e.g. <code>30m</code>, <code>24h</code>) or bare integer seconds; absent or non-positive (<code>0</code>) ⇒ don't cache. <em>Where</em> it's stored is the renderer's choice via a pluggable cache backend — the reference implementation ships an in-process memory cache (interface open for others, e.g. Redis). The key is derived from the fully-resolved prompt text + model + temperature + max_tokens + tools.</li>
+        <li><strong>Async</strong> — prompts run in <strong>sequential order by default</strong>; <code>async="yes"</code> opts a prompt into concurrent execution with the other async prompts in its level (a level may be sequential, concurrent, or a mix). Dependent prompts always run after the prompts they include.</li>
+      </ul>
+    </section>
+
+    <section id="safety">
+      <h2>7 · Escaping &amp; safety</h2>
+      <ul>
+        <li><code>&lt;fill&gt;</code>/<code>&lt;param&gt;</code> output is <strong>HTML-escaped</strong> in the document — special characters (<code>&lt;</code>, <code>&gt;</code>, <code>&amp;</code>, <code>"</code>, <code>'</code>) become their entities (e.g. <code>&lt;</code> → <code>&amp;lt;</code>), so a value renders as <strong>literal text</strong> instead of being interpreted as markup (preventing broken layout and HTML/script injection, i.e. XSS). Inside a <strong>prompt body</strong> the same <code>&lt;fill&gt;</code> is inserted <strong>raw</strong> — there it is text for the model, not HTML.</li>
+        <li>Model responses at <code>&lt;response&gt;</code> are emitted <strong>as-is</strong>; sanitize upstream if responses may contain untrusted markup.</li>
+        <li>Prompt bodies are tacit and never emitted, so prompt text does not leak into output.</li>
+      </ul>
+    </section>
+
+    <section id="conformance">
+      <h2>8 · Conformance</h2>
+      <p>A <strong>conforming SPREP renderer</strong> MUST:</p>
+      <ul>
+        <li>treat <code>&lt;prompt&gt;</code> as tacit (never emit it);</li>
+        <li>resolve <code>&lt;fill&gt;</code> dotted paths against bindings and the <code>request</code> namespace, and support <code>&lt;param&gt;</code>;</li>
+        <li>evaluate <code>condition</code> as a <em>named</em> rule lookup (no template-side expressions);</li>
+        <li>build the <code>&lt;include&gt;</code> dependency graph and execute in dependency order, detecting cycles;</li>
+        <li>support <code>&lt;response render="yes|no"&gt;</code>, with hidden responses still available to <code>&lt;include response&gt;</code>;</li>
+        <li>pass <code>model</code>, <code>temperature</code>, <code>max_tokens</code> and resolved <code>tools</code> to the model client;</li>
+        <li>cache responses when a <code>cache</code> directive is present, keyed on the output-determining inputs.</li>
+      </ul>
+      <p>A conforming renderer MAY add providers, cache backends, data sources or extensions,
+         provided the above semantics are preserved.</p>
+    </section>
+
+    <section id="refimpl">
+      <h2>9 · Reference implementation</h2>
+      <p>The <strong>HPRC Framework</strong> is the reference implementation
+         (<code>pip install hprc-framework</code>, <code>import hprc</code>). See the
+         <a href="../README.md">README</a>, the <a href="../docs/user-guide.html">User Guide</a>
+         and the <a href="../docs/architecture.html">Architecture</a>.</p>
+    </section>
+
+    <section id="future">
+      <h2>10 · Future extensions (non-normative)</h2>
+      <p>These are <strong>not</strong> part of SPREP v0.1; they describe the planned direction
+         (tracked in the <a href="../docs/architecture.html#roadmap">HPRC roadmap</a>), added as
+         optional, non-normative elements/attributes:</p>
+      <ul>
+        <li><code>&lt;system&gt;</code> — a system-message directive prepended to prompt model calls.</li>
+        <li><code>format</code> on <code>&lt;response&gt;</code> — <code>text</code> (escaped), <code>markdown</code> (→ sanitized HTML), <code>html</code> (sanitized).</li>
+        <li><code>returns="json"</code> on <code>&lt;prompt&gt;</code> — structured output whose fields fill many placeholders.</li>
+        <li><code>&lt;each&gt;</code> — iteration for rendering lists.</li>
+        <li><code>&lt;data&gt;</code> / <code>&lt;retrieve&gt;</code> — async data providers and RAG retrieval feeding prompts (<code>retrieved_context</code>).</li>
+        <li><code>&lt;live&gt;</code> — a region rendered as a placeholder + client hook, driven by a streaming endpoint (real-time widgets).</li>
+      </ul>
+      <p>Renderer-level (not language) additions on the roadmap include a bounded multi-step tool
+         loop, MCP tool sources, an input message chain (<code>prior_context</code>), and returning
+         the executed turns to the caller.</p>
+    </section>
+
+    <section id="example">
+      <h2>Appendix A — Complete example</h2>
+      <div class="code-card"><div class="code-head"><span>customer.sprep.html</span><span class="lang">html</span></div>
+<pre><code>&lt;h1&gt;&lt;fill&gt;customer.name&lt;/fill&gt;&lt;/h1&gt;
+
+&lt;prompt id="summary" model="gpt-5" condition="is_premium_customer"
+        temperature="0.2" cache="24h" tools="crm_lookup,pricing_engine"&gt;
+  Customer: &lt;fill&gt;customer.name&lt;/fill&gt; (tier: &lt;fill&gt;customer.tier&lt;/fill&gt;)
+  Product of interest: &lt;param&gt;product&lt;/param&gt;
+  Write a 2-sentence account summary.
+&lt;/prompt&gt;
+
+&lt;prompt id="upsell" model="gpt-5"&gt;
+  Given this summary: &lt;include response="summary"/&gt;
+  Suggest one upsell for "&lt;param&gt;product&lt;/param&gt;".
+&lt;/prompt&gt;
+
+&lt;section&gt;&lt;h2&gt;Summary&lt;/h2&gt;&lt;response id="summary"/&gt;&lt;/section&gt;
+&lt;section&gt;&lt;h2&gt;Next step&lt;/h2&gt;&lt;response id="upsell"/&gt;&lt;/section&gt;</code></pre></div>
+      <p><code>upsell</code> includes <code>summary</code>'s response, so a renderer executes
+         <code>summary</code> first, substitutes its output into <code>upsell</code>, and emits
+         both — while neither <code>&lt;prompt&gt;</code> block appears in the final HTML.</p>
+    </section>
+
+    <div class="foot">
+      SPREP Template Language Specification v0.1 · Reference implementation: HPRC Framework ·
+      © 2026 Rajesh Ramani · Apache-2.0
+    </div>
+  </main>
+</div>
+</body>
+</html>

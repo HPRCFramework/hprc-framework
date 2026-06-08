@@ -1,0 +1,8 @@
+region,product,units,revenue
+North,WidgetPro,120,5880
+South,WidgetPro,90,4410
+North,GadgetMax,45,3150
+West,WidgetPro,75,3675
+South,GadgetMax,30,2100
+West,GadgetMax,60,4200
+East,WidgetPro,50,2450

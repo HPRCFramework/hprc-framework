@@ -1,0 +1,46 @@
+<!--
+  assistant.sprep.html — a live SPREP template rendered by HPRC with real Claude.
+  Edit this file (on disk or via /edit) and refresh — changes apply on the next
+  request, no redeploy needed. <prompt> blocks are tacit: they never render.
+-->
+<h1>Account brief for <fill>customer.name</fill></h1>
+<p class="muted">Tier: <fill>customer.tier</fill> · Interested in: <param>product</param></p>
+
+<prompt id="summary" model="claude-sonnet-4-6" temperature="0.3" max_tokens="400" cache="10m">
+  You are a concise B2B account assistant. Write a 2-3 sentence brief for an
+  account manager about this customer.
+
+  Customer: <fill>customer.name</fill> (tier: <fill>customer.tier</fill>)
+  Product they asked about: <param>product</param>
+  Their question: <fill>ask</fill>
+
+  Be specific and practical. Do not invent facts you were not given.
+</prompt>
+
+<prompt id="upsell" model="claude-sonnet-4-6" temperature="0.5" max_tokens="200">
+  Given this account brief:
+  <include response="summary"/>
+
+  Suggest exactly ONE relevant upsell or next step for "<param>product</param>",
+  in a single sentence starting with a verb.
+</prompt>
+
+<prompt id="perk" model="claude-sonnet-4-6" condition="is_premium" temperature="0.6" max_tokens="120">
+  Write one short, warm sentence offering <fill>customer.name</fill> a premium-only
+  perk related to <param>product</param>.
+</prompt>
+
+<section class="card">
+  <h2>Summary</h2>
+  <response id="summary"/>
+</section>
+
+<section class="card">
+  <h2>Suggested next step</h2>
+  <response id="upsell"/>
+</section>
+
+<section class="card premium">
+  <h2>Premium perk</h2>
+  <response id="perk"/>
+</section>
