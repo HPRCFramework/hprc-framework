@@ -813,20 +813,84 @@ be dropped in without touching the renderer. If
 <code>HPRCConfig(cache=None)</code> is passed, it defaults back to a
 <code>MemoryCache</code>.</p>
 <hr />
+<h2 id="deploying-hprc-lifecycle--caching-at-scale">Deploying HPRC
+(lifecycle &amp; caching at scale)</h2>
+<p>The <code>HPRCConfig</code> (provider client, rules, tools, cache)
+and a parsed template are <strong>request-independent</strong> — so
+build them <strong>once at startup</strong> and share them across every
+request. Only <code>bindings</code> and the <code>request</code> change
+per call.</p>
+<div class="sourceCode" id="cb27"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="co"># built ONCE at import (e.g. module scope of your FastAPI app), shared by all requests</span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>CONFIG   <span class="op">=</span> HPRCConfig(llm_client<span class="op">=</span>..., rules<span class="op">=</span>..., tools<span class="op">=</span>..., cache<span class="op">=</span>MemoryCache())</span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>TEMPLATE <span class="op">=</span> hprc.parse_file(<span class="st">&quot;customer.sprep.html&quot;</span>)   <span class="co"># parse the HTML once, reuse forever</span></span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a><span class="at">@app.get</span>(<span class="st">&quot;/customer/</span><span class="sc">{cid}</span><span class="st">&quot;</span>)</span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a><span class="cf">async</span> <span class="kw">def</span> page(cid: <span class="bu">str</span>, request: Request):</span>
+<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a>    bindings <span class="op">=</span> {<span class="st">&quot;customer&quot;</span>: load_customer(cid)}      <span class="co"># ← only the data is per-request</span></span>
+<span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> HTMLResponse(<span class="cf">await</span> hprc.render_string(TEMPLATE, request<span class="op">=</span>request,</span>
+<span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a>                                                 bindings<span class="op">=</span>bindings, config<span class="op">=</span>CONFIG))</span></code></pre></div>
+<p>Why this matters and why it's safe:</p>
+<ul>
+<li><strong>The cache only works if the config persists.</strong>
+<code>MemoryCache</code> lives on the config; rebuilding the config per
+request hands each request a fresh, empty cache, so cached prompts never
+hit. Building it once gives the cache cross-request memory.</li>
+<li><strong>Sharing one config across concurrent requests is
+safe.</strong> The renderer is stateless-per-call — every render gets a
+fresh <code>RenderContext</code> for its responses, so no request state
+ever sticks to the config.</li>
+</ul>
+<h3 id="multiple-workers--instances">Multiple workers / instances</h3>
+<p>The render path is <strong>stateless</strong>, so HPRC scales
+horizontally for free — any instance can serve any request, no session
+stickiness. The one piece of shared state is the
+<strong>cache</strong>:</p>
+<ul>
+<li><strong>One process</strong> → one <code>MemoryCache</code>, shared
+by all its requests. ✅</li>
+<li><strong>Multiple uvicorn workers</strong> (<code>--workers N</code>)
+or <strong>multiple instances behind a load balancer</strong> (EC2 /
+containers) → each process gets its <strong>own</strong>
+<code>MemoryCache</code>, so the cache is fragmented and hit-rate drops.
+Swap in a <strong>shared</strong> backend via the pluggable
+<code>Cache</code> interface:</li>
+</ul>
+<div class="sourceCode" id="cb28"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> redis.asyncio <span class="im">import</span> Redis</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> hprc <span class="im">import</span> Cache</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> RedisCache(Cache):                       <span class="co"># same contract as MemoryCache</span></span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, redis): <span class="va">self</span>._r <span class="op">=</span> redis</span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> get(<span class="va">self</span>, key):  <span class="cf">return</span> <span class="cf">await</span> <span class="va">self</span>._r.get(key)</span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> <span class="bu">set</span>(<span class="va">self</span>, key, value, ttl): <span class="cf">await</span> <span class="va">self</span>._r.<span class="bu">set</span>(key, value, ex<span class="op">=</span>ttl)</span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a>CONFIG <span class="op">=</span> HPRCConfig(..., cache<span class="op">=</span>RedisCache(Redis.from_url(<span class="st">&quot;redis://my-cache:6379&quot;</span>)))</span></code></pre></div>
+<p>Now the cache key (the fully-resolved prompt + model + params) is
+global, so a response cached by <em>any</em> instance is reusable by
+<em>all</em> of them. Each instance still builds its own (identical,
+read-only) config and templates — only the cache is centralized.</p>
+<blockquote>
+<p><strong>Note:</strong> this applies to the synchronous render path.
+Streaming / live regions (roadmap) hold stateful connections and would
+need session affinity + a shared pub/sub — which is exactly why they're
+a separate execution model.</p>
+</blockquote>
+<hr />
 <h2 id="provider-abstraction">Provider Abstraction</h2>
 <p>Every provider implements one coroutine
 (<code>hprc/llm.py</code>):</p>
-<div class="sourceCode" id="cb27"><pre
-class="sourceCode python"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> LLMClient(ABC):</span>
-<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>    <span class="at">@abstractmethod</span></span>
-<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> generate(</span>
-<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>,</span>
-<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>        prompt: <span class="bu">str</span>,</span>
-<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a>        model: <span class="bu">str</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
-<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a>        temperature: <span class="bu">float</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
-<span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a>        max_tokens: <span class="bu">int</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
-<span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a>        tools: <span class="bu">list</span>[ToolDefinition] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
-<span id="cb27-10"><a href="#cb27-10" aria-hidden="true" tabindex="-1"></a>    ) <span class="op">-&gt;</span> <span class="bu">str</span>: ...</span></code></pre></div>
+<div class="sourceCode" id="cb29"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> LLMClient(ABC):</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>    <span class="at">@abstractmethod</span></span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">async</span> <span class="kw">def</span> generate(</span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>,</span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>        prompt: <span class="bu">str</span>,</span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a>        model: <span class="bu">str</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a>        temperature: <span class="bu">float</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a>        max_tokens: <span class="bu">int</span> <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a>        tools: <span class="bu">list</span>[ToolDefinition] <span class="op">|</span> <span class="va">None</span> <span class="op">=</span> <span class="va">None</span>,</span>
+<span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a>    ) <span class="op">-&gt;</span> <span class="bu">str</span>: ...</span></code></pre></div>
 <h3 id="shipped-providers">Shipped providers</h3>
 <p>Every provider SDK is imported <strong>lazily</strong>, so
 <code>import hprc</code> never requires any of them. Install only the
@@ -882,13 +946,13 @@ blocks</td>
 </tr>
 </tbody>
 </table>
-<div class="sourceCode" id="cb28"><pre
-class="sourceCode python"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> hprc <span class="im">import</span> OpenAIClient, AnthropicClient, GeminiClient, OllamaClient</span>
-<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>HPRCConfig(llm_client<span class="op">=</span>OpenAIClient(api_key<span class="op">=</span>os.environ[<span class="st">&quot;OPENAI_API_KEY&quot;</span>]))</span>
-<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>HPRCConfig(llm_client<span class="op">=</span>AnthropicClient(api_key<span class="op">=</span>os.environ[<span class="st">&quot;ANTHROPIC_API_KEY&quot;</span>]))</span>
-<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>HPRCConfig(llm_client<span class="op">=</span>GeminiClient(api_key<span class="op">=</span>os.environ[<span class="st">&quot;GOOGLE_API_KEY&quot;</span>]))</span>
-<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>HPRCConfig(llm_client<span class="op">=</span>OllamaClient(base_url<span class="op">=</span><span class="st">&quot;http://localhost:11434/v1&quot;</span>, default_model<span class="op">=</span><span class="st">&quot;llama3&quot;</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb30"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> hprc <span class="im">import</span> OpenAIClient, AnthropicClient, GeminiClient, OllamaClient</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>HPRCConfig(llm_client<span class="op">=</span>OpenAIClient(api_key<span class="op">=</span>os.environ[<span class="st">&quot;OPENAI_API_KEY&quot;</span>]))</span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>HPRCConfig(llm_client<span class="op">=</span>AnthropicClient(api_key<span class="op">=</span>os.environ[<span class="st">&quot;ANTHROPIC_API_KEY&quot;</span>]))</span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>HPRCConfig(llm_client<span class="op">=</span>GeminiClient(api_key<span class="op">=</span>os.environ[<span class="st">&quot;GOOGLE_API_KEY&quot;</span>]))</span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>HPRCConfig(llm_client<span class="op">=</span>OllamaClient(base_url<span class="op">=</span><span class="st">&quot;http://localhost:11434/v1&quot;</span>, default_model<span class="op">=</span><span class="st">&quot;llama3&quot;</span>))</span></code></pre></div>
 <p><strong>Client = provider, <code>model</code> =
 sub-selection.</strong> The client you put in <code>HPRCConfig</code>
 fixes the provider; a prompt's <code>model="..."</code> only picks the
@@ -899,16 +963,16 @@ variant within it.</p>
 <em>provider</em>, use <code>MultiProviderClient</code> (prefix routing)
 and/or <code>model_aliases</code> (logical names resolved before each
 call — also used in the cache key):</p>
-<div class="sourceCode" id="cb29"><pre
-class="sourceCode python"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>config <span class="op">=</span> HPRCConfig(</span>
-<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>    llm_client<span class="op">=</span>MultiProviderClient(</span>
-<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>        {<span class="st">&quot;openai&quot;</span>: OpenAIClient(), <span class="st">&quot;anthropic&quot;</span>: AnthropicClient()},</span>
-<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>        default<span class="op">=</span><span class="st">&quot;openai&quot;</span>,</span>
-<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>    ),</span>
-<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a>    model_aliases<span class="op">=</span>{<span class="st">&quot;summarizer&quot;</span>: <span class="st">&quot;anthropic:claude-sonnet-4-6&quot;</span>},</span>
-<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a><span class="co"># template:  &lt;prompt model=&quot;summarizer&quot;&gt;   -&gt; routed to Anthropic as claude-sonnet-4-6</span></span>
-<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a><span class="co">#            &lt;prompt model=&quot;gpt-5&quot;&gt;         -&gt; no prefix -&gt; default (OpenAI)</span></span></code></pre></div>
+<div class="sourceCode" id="cb31"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>config <span class="op">=</span> HPRCConfig(</span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>    llm_client<span class="op">=</span>MultiProviderClient(</span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>        {<span class="st">&quot;openai&quot;</span>: OpenAIClient(), <span class="st">&quot;anthropic&quot;</span>: AnthropicClient()},</span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>        default<span class="op">=</span><span class="st">&quot;openai&quot;</span>,</span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a>    model_aliases<span class="op">=</span>{<span class="st">&quot;summarizer&quot;</span>: <span class="st">&quot;anthropic:claude-sonnet-4-6&quot;</span>},</span>
+<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb31-8"><a href="#cb31-8" aria-hidden="true" tabindex="-1"></a><span class="co"># template:  &lt;prompt model=&quot;summarizer&quot;&gt;   -&gt; routed to Anthropic as claude-sonnet-4-6</span></span>
+<span id="cb31-9"><a href="#cb31-9" aria-hidden="true" tabindex="-1"></a><span class="co">#            &lt;prompt model=&quot;gpt-5&quot;&gt;         -&gt; no prefix -&gt; default (OpenAI)</span></span></code></pre></div>
 <h3 id="adding-another-provider">Adding another provider</h3>
 <p>Subclass <code>LLMClient</code>, implement <code>generate</code>, and
 lazy-import the SDK inside <code>_get_client</code>. No changes to the
@@ -951,9 +1015,9 @@ tests/                   # pytest suite (asyncio_mode = auto)</code></pre>
 <p><code>pytest</code> is configured with
 <code>asyncio_mode = "auto"</code> (no <code>@pytest.mark.asyncio</code>
 needed) and <code>testpaths = ["tests"]</code>:</p>
-<div class="sourceCode" id="cb31"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install <span class="at">-e</span> <span class="st">&quot;.[dev]&quot;</span></span>
-<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a><span class="ex">pytest</span> <span class="at">-q</span></span></code></pre></div>
+<div class="sourceCode" id="cb33"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install <span class="at">-e</span> <span class="st">&quot;.[dev]&quot;</span></span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a><span class="ex">pytest</span> <span class="at">-q</span></span></code></pre></div>
 <p>The suite (76 tests) covers parsing, fill/path resolution, request
 normalization, rules, tool execution, rendering &amp; tacit prompts, the
 dependency graph, async concurrency, response gathering, caching, and a

@@ -18,6 +18,11 @@ This demonstrates the full application-developer workflow:
 The developer writes **no prompt-orchestration logic**: HPRC resolves fills,
 evaluates the rule, builds the dependency graph (``upsell`` depends on
 ``summary``) and executes the prompts for you.
+
+Production note: the ``HPRCConfig`` (with its cache) and the parsed template are
+**request-independent**, so they are built **once at import** and shared by every
+request. Only ``bindings`` and the request change per call. See the README's
+"Deploying HPRC" section for multi-worker / load-balanced caching.
 """
 
 from __future__ import annotations
@@ -40,7 +45,7 @@ except Exception:  # pragma: no cover
 
 app = FastAPI(title="HPRC demo")
 
-TEMPLATE = os.path.join(os.path.dirname(__file__), "templates", "customer.sprep.html")
+TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), "templates", "customer.sprep.html")
 
 
 # --- fake "business logic" (would be a DB in a real app) -------------------
@@ -80,34 +85,31 @@ def _build_llm_client():
     return MockLLMClient()
 
 
+# --- built ONCE at import; shared by every request (the singleton pattern) --
+# The config (with its cache) and the parsed template are request-independent,
+# so build them at module load — NOT inside the handler. This is what lets the
+# cache persist across requests: a per-request HPRCConfig would hand every
+# request a fresh, empty MemoryCache, so cached prompts would never hit. Sharing
+# one CONFIG is safe because the renderer keeps all per-request state in a fresh
+# RenderContext, never on the config.
+CONFIG = HPRCConfig(
+    llm_client=_build_llm_client(),
+    rules={"is_premium_customer": lambda ctx: ctx["customer"]["tier"] == "premium"},
+    tools={"crm_lookup": crm_lookup, "pricing_engine": pricing_engine},
+    cache=MemoryCache(),
+)
+TEMPLATE = hprc.parse_file(TEMPLATE_PATH)  # parse the HTML once; reuse for every request
+
+
 @app.get("/customer/{customer_id}", response_class=HTMLResponse)
 async def customer_page(customer_id: str, request: Request):
+    # Per request, ONLY the data changes: this customer's bindings + the request.
     bindings = {
         "customer": load_customer(customer_id),
         "account": load_account(customer_id),
     }
-
-    RULES = {
-        "is_premium_customer": lambda ctx: ctx["customer"]["tier"] == "premium",
-    }
-
-    TOOLS = {
-        "crm_lookup": crm_lookup,
-        "pricing_engine": pricing_engine,
-    }
-
-    config = HPRCConfig(
-        llm_client=_build_llm_client(),
-        rules=RULES,
-        tools=TOOLS,
-        cache=MemoryCache(),
-    )
-
-    html = await hprc.render_template(
-        template_path=TEMPLATE,
-        request=request,
-        bindings=bindings,
-        config=config,
+    html = await hprc.render_string(
+        template=TEMPLATE, request=request, bindings=bindings, config=CONFIG
     )
     return HTMLResponse(html)
 

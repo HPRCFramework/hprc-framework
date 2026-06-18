@@ -540,6 +540,52 @@ The abstraction is deliberately minimal so a Redis-backed cache can be dropped i
 
 ---
 
+## Deploying HPRC (lifecycle & caching at scale)
+
+The `HPRCConfig` (provider client, rules, tools, cache) and a parsed template are **request-independent** — so build them **once at startup** and share them across every request. Only `bindings` and the `request` change per call.
+
+```python
+# built ONCE at import (e.g. module scope of your FastAPI app), shared by all requests
+CONFIG   = HPRCConfig(llm_client=..., rules=..., tools=..., cache=MemoryCache())
+TEMPLATE = hprc.parse_file("customer.sprep.html")   # parse the HTML once, reuse forever
+
+@app.get("/customer/{cid}")
+async def page(cid: str, request: Request):
+    bindings = {"customer": load_customer(cid)}      # ← only the data is per-request
+    return HTMLResponse(await hprc.render_string(TEMPLATE, request=request,
+                                                 bindings=bindings, config=CONFIG))
+```
+
+Why this matters and why it's safe:
+
+- **The cache only works if the config persists.** `MemoryCache` lives on the config; rebuilding the config per request hands each request a fresh, empty cache, so cached prompts never hit. Building it once gives the cache cross-request memory.
+- **Sharing one config across concurrent requests is safe.** The renderer is stateless-per-call — every render gets a fresh `RenderContext` for its responses, so no request state ever sticks to the config.
+
+### Multiple workers / instances
+
+The render path is **stateless**, so HPRC scales horizontally for free — any instance can serve any request, no session stickiness. The one piece of shared state is the **cache**:
+
+- **One process** → one `MemoryCache`, shared by all its requests. ✅
+- **Multiple uvicorn workers** (`--workers N`) or **multiple instances behind a load balancer** (EC2 / containers) → each process gets its **own** `MemoryCache`, so the cache is fragmented and hit-rate drops. Swap in a **shared** backend via the pluggable `Cache` interface:
+
+```python
+from redis.asyncio import Redis
+from hprc import Cache
+
+class RedisCache(Cache):                       # same contract as MemoryCache
+    def __init__(self, redis): self._r = redis
+    async def get(self, key):  return await self._r.get(key)
+    async def set(self, key, value, ttl): await self._r.set(key, value, ex=ttl)
+
+CONFIG = HPRCConfig(..., cache=RedisCache(Redis.from_url("redis://my-cache:6379")))
+```
+
+Now the cache key (the fully-resolved prompt + model + params) is global, so a response cached by *any* instance is reusable by *all* of them. Each instance still builds its own (identical, read-only) config and templates — only the cache is centralized.
+
+> **Note:** this applies to the synchronous render path. Streaming / live regions (roadmap) hold stateful connections and would need session affinity + a shared pub/sub — which is exactly why they're a separate execution model.
+
+---
+
 ## Provider Abstraction
 
 Every provider implements one coroutine (`hprc/llm.py`):
